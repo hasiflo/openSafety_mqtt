@@ -1,0 +1,251 @@
+<doxygenlayout version="1.0">
+    <!-- Navigation index tabs for HTML output -->
+    <navindex>
+        <tab type="mainpage" visible="yes" title="" />
+        <tab type="usergroup" url="\ref page_software_distribution" title="Software Distribution">
+            <tab type="user" url="\ref sect_build" title="Requirements"/>
+            <tab type="usergroup" url="\ref page_stack" title="openSAFETY Stack">
+                <tab type="user" url="\ref sect_precertification" title="Pre-Certification" />
+            </tab>
+            <tab type="usergroup" url="\ref page_tools" title="Tools &amp; Libraries">
+                <tab type="user" url="\ref oschecksum" title="openSAFETY CRC routines" />
+                <tab type="user" url="\ref oscrccheck" title="openSAFETY CRC check utility" />
+                <tab type="user" url="\ref page_pysodbuilder" title="pysodbuilder" />
+            </tab>
+            <tab type="usergroup" url="\ref page_source" title="Source Code">
+                <tab type="modules" visible="yes" title="" intro=""/>
+                <tab type="namespaces" visible="no" title="">
+                    <tab type="namespacelist" visible="yes" title="" intro=""/>
+                    <tab type="namespacemembers" visible="yes" title="" intro=""/>
+                </tab>
+                <tab type="classes" visible="yes" title="">
+                    <tab type="classlist" visible="yes" title="" intro=""/>
+                    <tab type="classindex" visible="$ALPHABETICAL_INDEX" title=""/>
+                    <tab type="hierarchy" visible="yes" title="" intro=""/>
+                    <tab type="classmembers" visible="yes" title="" intro=""/>
+                </tab>
+                <tab type="files" visible="yes" title="">
+                    <tab type="filelist" visible="yes" title="" intro=""/>
+                    <tab type="globals" visible="yes" title="" intro=""/>
+                </tab>
+                <tab type="examples" visible="yes" title="" intro=""/>
+            </tab>
+
+        </tab>
+        <tab type="usergroup" url="\ref page_swconcept" title="openSAFETY Software Concept">
+            <tab type="usergroup" url="\ref sect_terminology" title="Terminology">
+                <tab type="user" url="\ref sect_sd" title="Safety Domain" />
+                <tab type="user" url="\ref sect_sn" title="Safety Node" />
+                <tab type="user" url="\ref sect_scm" title="Safety Configuration Manager" />
+            </tab>
+            <tab type="usergroup" url="\ref page_swstructure" title="Software Structure">
+                <tab type="user" url="\ref sw_epls" title="openSAFETY auxiliary support module (EPLS)" />
+                <tab type="user" url="\ref sw_scfm" title="Safety Control Flow Monitoring (SCFM)" />
+                <tab type="user" url="\ref sw_scm" title="Safety Configuration Manager (SCM)" />
+                <tab type="user" url="\ref sw_sdn" title="Safety Domain Number (SDN)" />
+                <tab type="user" url="\ref sw_serr" title="Safety Error (SERR)" />
+                <tab type="user" url="\ref sw_sfs" title="Safety Frame Serialization (SFS)" />
+                <tab type="user" url="\ref sw_snmtm" title="Safety Network Management Master (SNMTM)" />
+                <tab type="user" url="\ref sw_snmts" title="Safety Network Management Slave (SNMTS)" />
+                <tab type="user" url="\ref sw_sod" title="Safety Object Dictionary (SOD)" />
+                <tab type="user" url="\ref sw_spdo" title="Safety Process Data (SPDO)" />
+                <tab type="user" url="\ref sw_ssc" title="Safety Stack Control (SSC)" />
+                <tab type="user" url="\ref sw_ssdoc" title="Safety Service Data Client (SSDOC)" />
+                <tab type="user" url="\ref sw_ssdos" title="Safety Service Data Server (SSDOS)" />
+            </tab>
+            <tab type="usergroup" url="\ref page_integration_guide" title="Integration Guide">
+                <tab type="usergroup" url="\ref integrate_sn" title="Implement a simple SN">
+                    <tab type="user" title="Necessary functions" url="\ref integrate_sn_necessary" />
+                    <tab type="user" title="Recommended callbacks" url="\ref integrate_sn_callbacks" />
+                    <tab type="user" title="Scaling the openSAFETY stack" url="\ref integrate_sn_scaling" />
+                    <tab type="user" title="Integrate an SOD" url="\ref integrate_sn_sod" />
+                </tab>
+            </tab>
+            <tab type="usergroup" url="\ref page_statemachines" title="State Machines">
+                <tab type="user" url="\ref sm_sn_powerup" title="SN Power Up" />
+                <tab type="user" url="\ref sm_scm_address_verification" title="SCM Address Verification" />
+            </tab>
+            <tab type="usergroup" url="" title="openSAFETY 1.5">
+                <tab type="user" url="\ref page_40bit_ct_for_spdo" title="40Bit CT for SPDO" />
+                <tab type="user" url="\ref page_callbacks_for_statechange" title="Callbacks for statechange" />
+                <tab type="user" url="\ref page_dynamic_sct" title="Dynamic SCT" />
+                <tab type="user" url="\ref page_preload" title="SSDO Preload" />
+            </tab>
+        </tab>
+        <tab type="user" url="\ref page_osdd" title="openSAFETY Device Description"/>
+
+        <tab type="files" visible="yes" title="">
+            <tab type="filelist" visible="yes" title="" intro=""/>
+            <tab type="globals" visible="yes" title="" intro=""/>
+        </tab>
+
+        <tab type="user" url="\ref page_licenses" title="Licenses"/>
+        <tab type="user" url="\ref page_changelog" title="Changelog"/>
+        <tab type="user" url="\ref page_application_notes" title="Application Notes"/>
+        <tab type="user" url="\ref page_system_integration_notes" title="System Integration Notes"/>
+    </navindex>
+
+    <!-- Layout definition for a class page -->
+    <class>
+        <briefdescription visible="yes"/>
+        <includes visible="$SHOW_INCLUDE_FILES"/>
+        <inheritancegraph visible="$CLASS_GRAPH"/>
+        <collaborationgraph visible="$COLLABORATION_GRAPH"/>
+        <memberdecl>
+            <nestedclasses visible="yes" title=""/>
+            <publictypes title=""/>
+            <publicslots title=""/>
+            <signals title=""/>
+            <publicmethods title=""/>
+            <publicstaticmethods title=""/>
+            <publicattributes title=""/>
+            <publicstaticattributes title=""/>
+            <protectedtypes title=""/>
+            <protectedslots title=""/>
+            <protectedmethods title=""/>
+            <protectedstaticmethods title=""/>
+            <protectedattributes title=""/>
+            <protectedstaticattributes title=""/>
+            <packagetypes title=""/>
+            <packagemethods title=""/>
+            <packagestaticmethods title=""/>
+            <packageattributes title=""/>
+            <packagestaticattributes title=""/>
+            <properties title=""/>
+            <events title=""/>
+            <privatetypes title=""/>
+            <privateslots title=""/>
+            <privatemethods title=""/>
+            <privatestaticmethods title=""/>
+            <privateattributes title=""/>
+            <privatestaticattributes title=""/>
+            <friends title=""/>
+            <related title="" subtitle=""/>
+            <membergroups visible="yes"/>
+        </memberdecl>
+        <detaileddescription title=""/>
+        <memberdef>
+            <inlineclasses title=""/>
+            <typedefs title=""/>
+            <enums title=""/>
+            <constructors title=""/>
+            <functions title=""/>
+            <related title=""/>
+            <variables title=""/>
+            <properties title=""/>
+            <events title=""/>
+        </memberdef>
+        <allmemberslink visible="yes"/>
+        <usedfiles visible="$SHOW_USED_FILES"/>
+        <authorsection visible="yes"/>
+    </class>
+
+    <!-- Layout definition for a namespace page -->
+    <namespace>
+        <briefdescription visible="yes"/>
+        <memberdecl>
+            <nestednamespaces visible="yes" title=""/>
+            <classes visible="yes" title=""/>
+            <typedefs title=""/>
+            <enums title=""/>
+            <functions title=""/>
+            <variables title=""/>
+            <membergroups visible="yes"/>
+        </memberdecl>
+        <detaileddescription title=""/>
+        <memberdef>
+            <inlineclasses title=""/>
+            <typedefs title=""/>
+            <enums title=""/>
+            <functions title=""/>
+            <variables title=""/>
+        </memberdef>
+        <authorsection visible="yes"/>
+    </namespace>
+
+    <!-- Layout definition for a file page -->
+    <file>
+        <briefdescription visible="yes"/>
+        <includes visible="$SHOW_INCLUDE_FILES"/>
+        <includegraph visible="$INCLUDE_GRAPH"/>
+        <includedbygraph visible="$INCLUDED_BY_GRAPH"/>
+        <sourcelink visible="yes"/>
+        <detaileddescription title=""/>
+        <memberdecl>
+            <classes visible="yes" title=""/>
+            <namespaces visible="yes" title=""/>
+            <defines title=""/>
+            <typedefs title=""/>
+            <enums title=""/>
+            <functions title=""/>
+            <variables title=""/>
+            <membergroups visible="yes"/>
+        </memberdecl>
+        <memberdef>
+            <inlineclasses title=""/>
+            <defines title=""/>
+            <typedefs title=""/>
+            <enums title=""/>
+            <functions title=""/>
+            <variables title=""/>
+        </memberdef>
+        <authorsection/>
+    </file>
+
+    <!-- Layout definition for a group page -->
+    <group>
+        <briefdescription visible="yes"/>
+        <detaileddescription title=""/>
+        <groupgraph visible="$GROUP_GRAPHS"/>
+        <memberdecl>
+            <nestedgroups visible="yes" title=""/>
+            <dirs visible="yes" title=""/>
+            <files visible="yes" title=""/>
+            <namespaces visible="yes" title=""/>
+            <classes visible="yes" title=""/>
+            <defines title=""/>
+            <typedefs title=""/>
+            <enums title=""/>
+            <enumvalues title=""/>
+            <functions title=""/>
+            <variables title=""/>
+            <signals title=""/>
+            <publicslots title=""/>
+            <protectedslots title=""/>
+            <privateslots title=""/>
+            <events title=""/>
+            <properties title=""/>
+            <friends title=""/>
+            <membergroups visible="yes"/>
+        </memberdecl>
+        <memberdef>
+            <pagedocs/>
+            <inlineclasses title=""/>
+            <defines title=""/>
+            <typedefs title=""/>
+            <enums title=""/>
+            <enumvalues title=""/>
+            <functions title=""/>
+            <variables title=""/>
+            <signals title=""/>
+            <publicslots title=""/>
+            <protectedslots title=""/>
+            <privateslots title=""/>
+            <events title=""/>
+            <properties title=""/>
+            <friends title=""/>
+        </memberdef>
+        <authorsection visible="yes"/>
+    </group>
+
+    <!-- Layout definition for a directory page -->
+    <directory>
+        <briefdescription visible="yes"/>
+        <directorygraph visible="yes"/>
+        <memberdecl>
+            <dirs visible="yes"/>
+            <files visible="yes"/>
+        </memberdecl>
+        <detaileddescription title=""/>
+    </directory>
+</doxygenlayout>

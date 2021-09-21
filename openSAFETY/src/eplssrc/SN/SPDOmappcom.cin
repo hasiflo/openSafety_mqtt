@@ -1,0 +1,814 @@
+/**
+ * @addtogroup SPDO
+ * @{
+ *
+ * @file SPDOmappcom.cin
+ *
+ * This file contains functions for processing the Tx and Rx mapping.
+ *
+ * @copyright Copyright (c) 2009,  Bernecker + Rainer Industrie-Elektronik Ges.m.b.H and IXXAT Automation GmbH
+ * @copyright All rights reserved, Bernecker + Rainer Industrie-Elektronik Ges.m.b.H
+ * @copyright This source code is free software; you can redistribute it and/or modify it under the terms of the BSD license (according to License.txt).
+ *
+ * @author M. Molnar, IXXAT Automation GmbH
+ *
+ * <h2>History for SPDOmappcom.cin</h2>
+ * <table>
+ *     <tr><th>Date</th><th>Author</th><th>Change Description</th></tr>
+ *     <tr><td>21.03.2011</td><td>Hans Pill</td><td>A&P257950 changed variables for better usage of memory</td></tr>
+ *     <tr><td>04.04.2011</td><td>Hans Pill</td><td>added preprocessor condition because some lines of codes cannot get reached for non SDG modules</td></tr>
+ *     <tr><td>05.10.2011</td><td>Hans Pill</td><td>Review SL V22</td></tr>
+ *     <tr><td>31.10.2014</td><td>Hans Pill</td><td>changes for virtual SOD</td></tr>
+ * </table>
+ *
+ */
+
+/**
+ * This define represents the number of bits per byte.
+ *
+ * The length of the mapped object is given in bit, but internally it is store as byte.
+ * This constant is used for the conversion.
+ */
+#define k_NO_BITS_PER_BYTE  8U
+
+/**
+ * Type definition for a structure describing a mapped object in the Safety Object Dictionary.
+ */
+typedef struct
+{
+#ifdef RX_SPDO
+    /** Pointer to the default value */
+    const void       *pv_defValue;
+#endif
+    /** Pointer to the mapped data */
+    void             *pv_data;
+    /** Data type of the mapped object */
+    EPLS_t_DATATYPE  e_dataType;
+    /** Length of the mapped object */
+    UINT8            b_dataLen;
+}t_MAPPED_OBJECT; /*lint !e18 : error 18: (Error -- Symbol redeclared (basic)
+                                           conflicts [MISRA 2004 Rule 8.3]) */
+
+/**
+ * Structure for the SPDO Mapping parameters
+ */
+typedef struct
+{
+    /**
+     * Number of mapped objects
+     *
+     * - 0xC000-0xC3FE sub 0 (Tx SPDO)
+     * - 0x1800-0x1BFE sub 0 (Rx SPDO)
+     */
+    UINT8  b_noMappedObject;
+    /** variable to store the actual length in byte of the SPDO */
+    UINT8 b_lenOfSpdo;
+    /** array for the mapped objects */
+    t_MAPPED_OBJECT as_mappedObject[SPDO_cfg_MAX_SPDO_MAPP_ENTRIES];
+    /**
+     * Array of byte pointers to the SPDO data.
+     *
+     * This array works only with byte mapping. It must not use for bit mapping.
+     */
+    UINT8 *apb_DataForSpdo[SPDO_cfg_MAX_LEN_OF_SPDO];
+} t_MAPP_PARAM; /*lint !e18 : error 18: (Error -- Symbol redeclared (basic)
+                                           conflicts [MISRA 2004 Rule 8.3]) */
+
+/** variable containing the mapping entries for all SPDOs. */
+static
+t_MAPP_PARAM as_MappParam[SPDO_cfg_MAX_NO_SPDO +
+                          (EPLS_cfg_MAX_INSTANCES - 1)*SPDO_cfg_MAX_NO_SPDO_SDG] SAFE_NO_INIT_SEKTOR;
+
+/** Object structure for the mapping parameter. */
+typedef struct
+{
+    /** array for the mapping parameter */
+    t_MAPP_PARAM *ps_mappPara;
+    /** dummy variable for SPDO dummy mapping */
+    UINT32 dw_dummyEntry;
+    /** number of SPDO for this instance */
+    UINT16 w_noSpdo;
+}t_MAPP_OBJ; /*lint !e18 : error 18: (Error -- Symbol redeclared (basic)
+                                           conflicts [MISRA 2004 Rule 8.3]) */
+
+static
+t_MAPP_OBJ as_Obj[EPLS_cfg_MAX_INSTANCES] SAFE_NO_INIT_SEKTOR; /*lint !e960
+                                                     see Remarks of this file */
+
+/***
+ *    static function-prototypes
+ ***/
+static BOOLEAN ConfigNewMappedObj(BYTE_B_INSTNUM_ t_MAPP_OBJ *po_this,
+        UINT16 w_spdoIdx, UINT8 b_spdoSubIdx,
+        UINT32 dw_mappingEntry,
+        SOD_t_ERROR_RESULT *ps_errRes);
+static void AddObjToByteArray(t_MAPP_PARAM *po_this, UINT8 b_actBytePtrIdx,
+        EPLS_t_DATATYPE e_dataType, UINT8 *pb_src,
+        UINT8 b_len);
+static BOOLEAN MappLenOk(UINT16 w_objAttr, UINT32 dw_objLen,
+        UINT8 b_mappLen);
+
+
+/**
+ * @brief This function initializes the pointers to the data of the mapped objects.
+ *
+ * @param b_instNum instance number (not checked, checked in SSC_InitAll()) valid range: 0..(EPLS_cfg_MAX_INSTANCES-1)
+ */
+void SPDO_InitMapp(BYTE_B_INSTNUM)
+{ /*lint !e960 see Remarks of this file */
+    UINT32 i, j; /* loop counters */ /*lint !e960 */
+    /* instance pointer */
+    t_MAPP_OBJ *po_this = &as_Obj[B_INSTNUMidx]; /*lint !e960 */
+    t_MAPP_PARAM  *ps_spdo = NULL;
+
+#if EPLS_cfg_MAX_INSTANCES > 1 /* if more instances are configured */
+    /* prepare the variables of this instance */
+    if ( 0 == B_INSTNUMidx)
+    {
+        po_this->ps_mappPara = &as_MappParam[0];
+        po_this->w_noSpdo = SPDO_cfg_MAX_NO_SPDO;
+    }
+    else
+    {
+        po_this->ps_mappPara =
+                &as_MappParam[(B_INSTNUMidx - 1)*SPDO_cfg_MAX_NO_SPDO_SDG +
+                              SPDO_cfg_MAX_NO_SPDO];
+        po_this->w_noSpdo = SPDO_cfg_MAX_NO_SPDO_SDG;
+    }
+#else /* EPLS_cfg_MAX_INSTANCES > 1 */
+    po_this->ps_mappPara = &as_MappParam[0];
+    po_this->w_noSpdo = SPDO_cfg_MAX_NO_SPDO;
+#endif /* EPLS_cfg_MAX_INSTANCES > 1 */
+    po_this->dw_dummyEntry = 0UL;
+
+
+    /* for all Tx or Rx SPDOs */
+    for(i = 0U; i < (UINT32)po_this->w_noSpdo; i++)
+    {
+        ps_spdo = po_this->ps_mappPara + i;
+        ps_spdo->b_noMappedObject = 0U;
+        ps_spdo->b_lenOfSpdo = 0U;
+
+        /* for all SPDO mapping entries */
+        for(j = 0U; j < (UINT32)SPDO_cfg_MAX_SPDO_MAPP_ENTRIES; j++)
+        {
+#ifdef RX_SPDO
+            ps_spdo->as_mappedObject[j].pv_defValue = NULL;
+#endif
+            ps_spdo->as_mappedObject[j].pv_data = NULL;
+            ps_spdo->as_mappedObject[j].e_dataType = EPLS_k_BOOLEAN;
+            ps_spdo->as_mappedObject[j].b_dataLen = 0U;
+        }
+
+        /* for all byte pointer in the byte pointer array */
+        for(j = 0U; j < (UINT32)SPDO_cfg_MAX_LEN_OF_SPDO; j++)
+        {
+            ps_spdo->apb_DataForSpdo[j] = (UINT8 *)NULL;
+        }
+    }
+
+    /* call the Control Flow Monitoring */
+    SCFM_TACK_PATH();
+}
+
+/**
+ * @brief This function initializes the default mapping for one SPDO.
+ *
+ * The mapping entries are read from the object dictionary.
+ * The mapped objects are checked and the reference to these
+ * objects are stored into the internal SPDO structure.
+ *
+ * @param b_instNum instance number (not checked, checked in SSC_InitAll()) valid range: 0..(EPLS_cfg_MAX_INSTANCES-1)
+ * @param w_spdoIdx index in the internal array of the SPDO structures (not checked, checked in TxMappCommInit() or RxMappCommInit()) valid range: 0..(SPDO_cfg_MAX_NO_SPDO-1)
+ * @param w_index index of the SPDO communication parameter object (not checked, checked in InitTxSpdo() or InitRxSpdo()), valid range: k_MAPP_START_IDX..k_MAPP_END_IDX
+ * @param b_noEntries number of entries (checked) valid range: 0..SPDO_cfg_MAX_RX_SPDO_MAPP_ENTRIES
+ *
+ * @return
+ * - TRUE             - success
+ * - FALSE            - failure
+ *
+ */
+BOOLEAN SPDO_SetMapp(BYTE_B_INSTNUM_ UINT16 w_spdoIdx, UINT16 w_index,
+        UINT8 b_noEntries)
+{ /*lint !e960 see Remarks of this file */
+    BOOLEAN o_ret = FALSE; /* return value */ /*lint !e960 */
+    BOOLEAN o_break = FALSE; /* break flag */ /*lint !e960 */
+    /* instance pointer */
+    t_MAPP_OBJ *po_this = &as_Obj[B_INSTNUMidx]; /*lint !e960 */
+    UINT8 b_subIdx; /* SOD sub-index for SOD access */ /*lint !e960 */
+    const SOD_t_ATTR *ps_attr; /* pointer to the SOD attribute */ /*lint !e960 */
+    void *pv_data; /* pointer to the SOD data */ /*lint !e960 */
+    SOD_t_ERROR_RESULT s_errRes; /* SOD access error */ /*lint !e960 */
+  SOD_t_ACS_OBJECT_VIRT s_objAcs;
+
+    /* if the given SPDO mapping is not active */
+    if (b_noEntries == 0U)
+    {
+        (po_this->ps_mappPara + w_spdoIdx)->b_noMappedObject = 0U;
+        (po_this->ps_mappPara + w_spdoIdx)->b_lenOfSpdo = 0U;
+        o_ret = TRUE;
+    }
+    /* else the given SPDO mapping is active */
+    else if (b_noEntries <= (UINT8)SPDO_cfg_MAX_SPDO_MAPP_ENTRIES)
+    {
+        b_subIdx = 1U;
+        /* loop for all mapping entries */
+        while ((b_subIdx <= b_noEntries) && !o_break)
+        {
+      s_objAcs.s_obj.w_index = w_index;
+      s_objAcs.s_obj.b_subIndex = b_subIdx;
+      s_objAcs.dw_segSize = 0;
+      s_objAcs.dw_segOfs = 0;
+
+            /* get attribute of the mapping parameter */
+      ps_attr = SOD_AttrGetVirt(B_INSTNUM_ &s_objAcs, &s_errRes);
+
+            /* if access to the mapping entry was successful */
+            if (ps_attr != NULL)
+            {
+                /* if BEFORE WRITE flag is set */
+                if (EPLS_IS_BIT_SET(ps_attr->w_attr,SOD_k_ATTR_BEF_WR))
+                {
+                    /* get a pointer to the mapping entry */
+                    pv_data = SOD_ReadVirt(B_INSTNUM_ &s_objAcs, &s_errRes);
+
+                    /* if read access to the mapping entry was successful */
+                    if (pv_data != NULL)
+                    {
+                        /* if the mapped object was not configured successfully */
+                        if (!ConfigNewMappedObj(B_INSTNUM_ po_this, w_spdoIdx, b_subIdx,
+                                (*((UINT32 *)(pv_data))), &s_errRes))
+                        {
+                            SERR_SetError(B_INSTNUM_ s_errRes.w_errorCode,
+                                    (UINT32)(s_errRes.e_abortCode));
+                            o_break = TRUE;
+                        }
+                        /* no else : the mapped object was configured successfully */
+                    }
+                    /* else read access to the mapping entry failed */
+                    else
+                    {
+                        SERR_SetError(B_INSTNUM_ s_errRes.w_errorCode,
+                                (UINT32)(s_errRes.e_abortCode));
+                        o_break = TRUE;
+                    }
+                }
+                /* else BEFORE WRITE flag is not set */
+                else
+                {
+                    SERR_SetError(B_INSTNUM_ SPDO_k_ERR_BEF_WR_SUB_X,
+                            (((UINT32)(w_index))<<16) + b_subIdx);
+                    o_break = TRUE;
+                }
+            }
+            /* else read access to the mapping entry failed */
+            else
+            {
+                SERR_SetError(B_INSTNUM_ s_errRes.w_errorCode,
+                        (UINT32)(s_errRes.e_abortCode));
+
+                o_break = TRUE;
+            }
+
+            b_subIdx++;
+        }
+
+        /* if loop was successful */
+        if (!o_break)
+        {
+            o_ret = TRUE;
+        }
+        /* no else : loop was not successful */
+    }
+    /* error happened */
+    else
+    {
+        SERR_SetError(B_INSTNUM_ SPDO_k_ERR_MAPP_ENTRY_1, (UINT32)w_index);
+    }
+
+    /* call the Control Flow Monitoring */
+    SCFM_TACK_PATH();
+
+    return o_ret;
+}
+
+/**
+ * This is a callback function ro rx & tx mapping parameter entries sub-indicex 0-253
+ *
+ * This function is a callback function for objects with index 0x1800-0x1BFE (rx mapping parameters)
+ * sub-index 0-253 and 0xC000-0xC3FE (tx mapping parameters) sub-index 0-253. If 0 is written on
+ * sub-index 0 (NumberOfEntries), then the SPDO mapping for the corresponding SPDO is deactivated
+ * otherwise the SPDO mapping for the corresponding SPDO is activated. If another sub-index is
+ * written (SPDOMapping_U32), then the mapped object is checked whether the mapped object is mappable or not.
+ *
+ * @attention Objects with index 0x1800-0x1BFE (rx mapping parameters) sub-index 0-253 and
+ * 0xC000-0xC3FE (tx mapping parameters) sub-index 0-253 have to be defined in the SOD with
+ * SOD_k_ATTR_BEF_WR attribute and callback function reference to this function.
+ *
+ * @param b_instNum instance number (not checked, checked in SOD_Read() or SOD_Write()) valid range: 0..(EPLS_cfg_MAX_INSTANCES-1)
+ * @param e_srvc type of service, see SOD_t_SERVICE (not checked, only called with enum value in CallBeforeReadClbk() or CallBeforeWriteClbk() or SOD_CallAfterWriteClbk()) valid range: SOD_t_SERVICE
+ * @param ps_obj pointer to a SOD entry, see SOD_t_OBJECT (pointer not checked, only called with reference to struct in SOD_Read() or SOD_Write()) valid range: pointer to a SOD_t_OBJECT
+ * @param pv_data pointer to data to be written, in case of SOD_k_SRV_BEFORE_WRITE, otherwise NULL (pointer not checked, checked in SOD_Write()) valid range: pointer to data to be written, in case of  SOD_k_SRV_BEFORE_WRITE, otherwise NULL
+ * @param dw_offset start offset in bytes of the segment within the data block (not used)
+ * @param dw_size size in bytes of the segment (not used)
+ *
+ * @retval pe_abortCode abort code has to be set for the SSDO if the return value is FALSE. (pointer not checked, only called with reference to variable) valid range: pointer to the SOD_t_ABORT_CODES
+ *
+ * @return
+ * - TRUE               - success
+ * - FALSE              - failure
+ *
+ */
+BOOLEAN SPDO_SOD_MappPara_CLBK(BYTE_B_INSTNUM_ SOD_t_SERVICE e_srvc,
+        const SOD_t_OBJECT *ps_obj,
+        const void *pv_data,
+        UINT32 dw_offset, UINT32 dw_size,
+        SOD_t_ABORT_CODES *pe_abortCode)
+{ /*lint !e960 see Remarks of this file */
+    BOOLEAN o_ret = FALSE; /* return value */ /*lint !e960 */
+    /* instance pointer */
+    t_MAPP_OBJ *po_this = &as_Obj[B_INSTNUMidx]; /*lint !e960 */
+    /* variable to store the Tx or Rx SPDO index */
+    UINT16 w_spdoIdx; /*lint !e960 */
+    SOD_t_ERROR_RESULT s_errRes; /* SOD access error */ /*lint !e960 */
+
+    /* to avoid compiler warning */
+    dw_offset = dw_offset;
+    dw_size = dw_size;
+
+    if (pe_abortCode != NULL)
+    {
+        /* if "before write" */
+        if (e_srvc == SOD_k_SRV_BEFORE_WRITE)
+        {
+            /* SOD index to SPDO index */
+            w_spdoIdx = (UINT16)(ps_obj->w_index-k_MAPP_START_IDX);
+
+            /* if SPDO index is valid */
+            if (w_spdoIdx < (UINT16)SPDO_cfg_MAX_NO_SPDO)
+            {
+                /* if sub = 0 (number of entries)*/
+                if (ps_obj->b_subIndex == 0U)
+                {
+                    o_ret = TRUE;
+                }
+                /* else if sub <= SPDO_cfg_MAX_SPDO_MAPP_ENTRIES (mapping parameter)*/
+                else if (ps_obj->b_subIndex <= (UINT8)SPDO_cfg_MAX_SPDO_MAPP_ENTRIES)
+                {
+                    o_ret = ConfigNewMappedObj(B_INSTNUM_ po_this, w_spdoIdx,
+                            ps_obj->b_subIndex, *((UINT32 *)(pv_data)),
+                            &s_errRes);
+
+                    /* if the object is not mappable */
+                    if (!o_ret)
+                    {
+#if (SOD_cfg_APPLICATION_OBJ == EPLS_k_DISABLE)
+#pragma CTC SKIP
+#endif
+                        /* if the object not mappable */
+                        if ((s_errRes.w_errorCode == SPDO_k_ERR_MAP_OBJ) &&
+                                (s_errRes.e_abortCode == SOD_ABT_OBJ_NOT_MAPPABLE))
+                        {
+                            /* SSDO abort frame is sent */
+                        }
+                        else /* other error happened */
+                        {
+                            SERR_SetError(B_INSTNUM_ s_errRes.w_errorCode,
+                                    (UINT32)(s_errRes.e_abortCode));
+                        }
+#if (SOD_cfg_APPLICATION_OBJ == EPLS_k_DISABLE)
+#pragma CTC ENDSKIP
+#endif
+
+                        *pe_abortCode = s_errRes.e_abortCode;
+                    }
+                }
+                /* error happened */
+                else
+                {
+                    *pe_abortCode = SOD_ABT_LOCAL_CONTROL;
+                }
+            }
+            /* else invalid SPDO index */
+            else
+            {
+                *pe_abortCode = SOD_ABT_LOCAL_CONTROL;
+            }
+        }
+        /* else other services are ignored */
+        else
+        {
+            SERR_SetError(B_INSTNUM_ SPDO_k_ERR_SOD_SRV, (UINT32)(e_srvc));
+            o_ret = TRUE;
+        }
+    }
+    else
+    {
+        SERR_SetError(B_INSTNUM_ SPDO_k_ERR_SOD_SRV, (UINT32)(e_srvc));
+        o_ret = TRUE;
+    }
+
+    /* call the Control Flow Monitoring */
+    SCFM_TACK_PATH();
+
+    return o_ret;
+}
+
+/**
+ * @brief This function activates the SPDO mapping, assembles the byte pointer array for the
+ * mapped objects and checks the length of the SPDO mapping.
+ *
+ * @param b_instNum instance number (not checked, checked in SSC_ProcessSNMTSSDOFrame()) valid range: 0..(EPLS_cfg_MAX_INSTANCES-1)
+ * @param w_spdoIdx SPDO index (not checked, checked in SPDO_ActivateTxSpdoMapping() or SPDO_ActivateRxSpdoMapping()) valid range: 0..(SPDO_cfg_MAX_NO_SPDO-1)
+ * @param b_noEntries number of entries (checked) valid range: 0..SPDO_cfg_MAX_RX_SPDO_MAPP_ENTRIES
+ *
+ * @return
+ * - TRUE             - success
+ * - FALSE            - failure
+ *
+ */
+BOOLEAN SPDO_MappActivate(BYTE_B_INSTNUM_ UINT16 w_spdoIdx, UINT8 b_noEntries)
+{ /*lint !e960 see Remarks of this file */
+    BOOLEAN o_ret = FALSE; /* return value */ /*lint !e960 */
+    BOOLEAN o_break = FALSE; /* return value */ /*lint !e960 */
+    /* index in the mapping table 0..(number of entries-1) */
+    UINT8 b_mappingTableIdx; /*lint !e960 */
+    /* instance pointer */
+    t_MAPP_OBJ *po_this = &as_Obj[B_INSTNUMidx]; /*lint !e960 */
+
+    /* variables definitions for increasing the readability of the code */
+    /* pointer to the SPDO structure */
+    t_MAPP_PARAM *ps_spdo = po_this->ps_mappPara + w_spdoIdx; /*lint !e960 */
+    /* temporary  pointer to a mapping entry */
+    t_MAPPED_OBJECT *ps_mappingEntry; /*lint !e960 */
+    /* pointer to the SPDO length */
+    UINT8 *pb_spdoLen = &ps_spdo->b_lenOfSpdo; /*lint !e960 */
+
+    /* if number of entries is Ok */
+    if (b_noEntries <= (UINT8)SPDO_cfg_MAX_SPDO_MAPP_ENTRIES)
+    {
+        *pb_spdoLen = 0U;
+        b_mappingTableIdx = 0U;
+
+        /* loop for all mapping entries */
+        while ((b_mappingTableIdx < b_noEntries) && !o_break)
+        {
+            /* set a pointer to the first/next mapping entry */
+            ps_mappingEntry = &ps_spdo->as_mappedObject[b_mappingTableIdx];
+
+            /* if the object is mappable */
+            if (ps_mappingEntry->pv_data != NULL)
+            {
+                /* if SPDO is too long */
+                if (((UINT16)(*pb_spdoLen) + (UINT16)(ps_mappingEntry->b_dataLen)) >
+                (UINT16)SPDO_cfg_MAX_LEN_OF_SPDO)
+                {
+                    SERR_SetError(B_INSTNUM_ SPDO_k_ERR_TOO_LONG, (UINT32)w_spdoIdx);
+                    /* loop is left because of an error */
+                    o_break = TRUE;
+                }
+                /* else the length SPDO is OK */
+                else
+                {
+                    /* the mapped object is added to the byte array */
+                    AddObjToByteArray(ps_spdo, *pb_spdoLen, ps_mappingEntry->e_dataType,
+                            (UINT8 *)ps_mappingEntry->pv_data,
+                            ps_mappingEntry->b_dataLen);
+                    /* set the length of the SPDO */
+                    (*pb_spdoLen) = (UINT8)((*pb_spdoLen) + ps_mappingEntry->b_dataLen);
+                }
+            }
+            /* else SOD error */
+            else
+            {
+                SERR_SetError(B_INSTNUM_ SPDO_k_ERR_OBJ_MAPP_1,
+                        (((UINT32)(w_spdoIdx))<<16)+
+                        ((UINT32)(b_mappingTableIdx)+1U));
+                /* loop is left because of an error */
+                o_break = TRUE;
+            }
+
+            b_mappingTableIdx++;
+        }
+
+        /* if the loop was successful */
+        if (!o_break)
+        {
+            o_ret = TRUE;
+        }
+        /* no else : the loop was not successful */
+
+        /* number of entries will be set to activate this mapping */
+        ps_spdo->b_noMappedObject = b_noEntries;
+    }
+    /* else number of entries is wrong */
+    else
+    {
+        SERR_SetError(B_INSTNUM_ SPDO_k_ERR_MAPP_ENTRY_3, (UINT32)w_spdoIdx);
+    }
+
+    /* call the Control Flow Monitoring */
+    SCFM_TACK_PATH();
+
+    return o_ret;
+}
+
+
+/**
+ * @brief This function checks the objects mapped by the SPDO mapping and writes into the SPDO intern structure.
+ *
+ * @param b_instNum instance number (not checked, checked in SOD_Read() or SOD_Write() or SSC_InitAll())
+ *     valid range: 0..(EPLS_cfg_MAX_INSTANCES-1)
+ * @param po_this pointer to the module instance (not checked, only called with reference to struct in
+ *     SPDO_SetMapp() or SPDO_SOD_MappPara_CLBK())
+ * @param w_spdoIdx index in the internal array of the SPDO structures (not checked, checked in TxMappCommInit()
+ *     or RxMappCommInit() or SPDO_SOD_MappPara_CLBK()) valid range: 0..(SPDO_cfg_MAX_NO_SPDO-1)
+ * @param b_spdoSubIdx sub index of the mapping entry (not checked, checked in SPDO_SetMapp() or
+ *     SPDO_SOD_MappPara_CLBK()) valid range: 1..SPDO_cfg_MAX_SPDO_MAPP_ENTRIES
+ * @param dw_mappingEntry mapping entries, always in host format (not checked, any value allowed) valid range: (UINT32)
+ *
+ * @retval ps_errRes error result, only relevant if the return value == FALSE, (not checked, only called with
+ *     reference to struct in SPDO_SOD_MappPara_CLBK() or SPDO_SetMapp()), valid range : <> NULL
+ *
+ * @return
+ * - TRUE                  - success
+ * - FALSE                 - failed, see ps_errRes
+ */
+static BOOLEAN ConfigNewMappedObj(BYTE_B_INSTNUM_ t_MAPP_OBJ *po_this,
+        UINT16 w_spdoIdx, UINT8 b_spdoSubIdx,
+        UINT32 dw_mappingEntry,
+        SOD_t_ERROR_RESULT *ps_errRes)
+{ /*lint !e960 see Remarks of this file */
+    BOOLEAN o_ret = FALSE; /* return value */ /*lint !e960 */
+    /* pointer to the object attribute */
+    const SOD_t_ATTR *ps_attr; /*lint !e960 */
+    void *pv_data; /* pointer to the SOD data */ /*lint !e960 */
+    /* temp pointer to a mapping entry to increase the readability of the code */
+    t_MAPPED_OBJECT *ps_mappingEntry; /*lint !e960 */
+    UINT16 w_wordTmp; /* temporary variable */ /*lint !e960 */
+    UINT16 w_index; /* index of the mapped object */ /*lint !e960 */
+    UINT8 b_subIdx; /* sub-index of the mapped object */ /*lint !e960 */
+    UINT8 b_len; /* length of the mapped object */ /*lint !e960 */
+  SOD_t_ACS_OBJECT_VIRT s_objAcs;
+
+#ifdef RX_SPDO
+    /* table to convert the dummy index to data length in bit
+      dummy index range : (1-7)
+      table index range : (0-6) ==> [index-1] */
+    const UINT8 ab_dummyIdxToLen[k_MAX_DUMMY_IDX]= /*lint !e960 */
+    {
+            8U,  /* BOOLEAN    (dummy index = 1) */
+            8U,  /* INTEGER8   (dummy index = 2) */
+            16U, /* INTEGER16  (dummy index = 3) */
+            32U, /* INTEGER32  (dummy index = 4) */
+            8U,  /* UNSIGNED8  (dummy index = 5) */
+            16U, /* UNSIGNED16 (dummy index = 6) */
+            32U  /* UNSIGNED32 (dummy index = 7) */
+    };
+
+    /* table to convert the dummy index to data type
+      dummy index range : (1-7)
+      table index range : (0-6) ==> [index-1] */
+    const EPLS_t_DATATYPE ae_dummyIdxToType[k_MAX_DUMMY_IDX]= /*lint !e960
+                                                 see Remarks of this file */
+    {
+            EPLS_k_BOOLEAN, /* BOOLEAN    (dummy index = 1) */
+            EPLS_k_INT8,    /* INTEGER8   (dummy index = 2) */
+            EPLS_k_INT16,   /* INTEGER16  (dummy index = 3) */
+            EPLS_k_INT32,   /* INTEGER32  (dummy index = 4) */
+            EPLS_k_UINT8,   /* UNSIGNED8  (dummy index = 5) */
+            EPLS_k_UINT16,  /* UNSIGNED16 (dummy index = 6) */
+            EPLS_k_UINT32   /* UNSIGNED32 (dummy index = 7) */
+    };
+#endif
+
+    ps_errRes->w_errorCode = SPDO_k_ERR_MAP_OBJ;
+    ps_errRes->e_abortCode = SOD_ABT_OBJ_NOT_MAPPABLE;
+
+    /* if the mapping entry is deactivated */
+    if (dw_mappingEntry == 0x00UL)
+    {
+        /* b_subIdx : 1..x ; as_spdo[0..x-1] ==> (b_subIdx-1) */
+        b_spdoSubIdx--;
+        ps_mappingEntry = &(po_this->ps_mappPara + w_spdoIdx)->
+                as_mappedObject[b_spdoSubIdx];
+        ps_mappingEntry->pv_data = NULL;
+
+        o_ret = TRUE;
+
+        ps_errRes->w_errorCode = SOD_k_ERR_NO;
+        ps_errRes->e_abortCode = SOD_ABT_NO_ERROR;
+    }
+    else /* the mapping entry is activated */
+    {
+        /* Get index of the mapped object (high word). */
+        w_index = HIGH16(dw_mappingEntry);
+
+        /* Get low word of the mapping entry. */
+        w_wordTmp = LOW16(dw_mappingEntry);
+
+        /* get sub-index of the mapped object */
+        b_subIdx = HIGH8(w_wordTmp);
+        /* get the length of the mapped object in bit*/
+        b_len = LOW8(w_wordTmp);
+
+        /* if dummy index */
+        if (IS_DUMMY_INDEX(w_index))
+        {
+#ifdef RX_SPDO
+            /* if the length of the dummy object is OK */
+            if (b_len == ab_dummyIdxToLen[w_index-1U])
+            {
+                /* b_subIdx : 1..x ; as_spdo[0..x-1] ==> (b_subIdx-1) */
+                b_spdoSubIdx--;
+                ps_mappingEntry = &(po_this->ps_mappPara + w_spdoIdx)->
+                        as_mappedObject[b_spdoSubIdx];
+
+                /* set mapping parameters in the SPDO structure */
+                ps_mappingEntry->pv_data = &po_this->dw_dummyEntry;
+                ps_mappingEntry->e_dataType = ae_dummyIdxToType[w_index-1U];
+                /* it has to be change for bit mapping */
+                ps_mappingEntry->b_dataLen = (UINT8)(b_len / k_NO_BITS_PER_BYTE);
+
+                o_ret = TRUE;
+
+                ps_errRes->w_errorCode = SOD_k_ERR_NO;
+                ps_errRes->e_abortCode = SOD_ABT_NO_ERROR;
+            }
+            /* no else length of the dummy object is wrong */
+#endif
+        }
+        /* else no dummy index */
+        else
+        {
+            s_objAcs.s_obj.w_index = w_index;
+            s_objAcs.s_obj.b_subIndex = b_subIdx;
+            s_objAcs.dw_segSize = 0;
+            s_objAcs.dw_segOfs = 0;
+            /* attribute of the mapped object is got */
+            ps_attr = SOD_AttrGetVirt(B_INSTNUM_ &s_objAcs,
+                                      ps_errRes);
+
+            /* if mapped object access was OK */
+            if (ps_attr != NULL)
+            {
+                /* if the data length is OK and
+              the object is mappable and
+              writeable(for Rx SPDO) and
+              readable(for Tx SPDO) */
+                if (MappLenOk(ps_attr->w_attr, ps_attr->dw_objLen, b_len) &&
+                        EPLS_IS_BIT_SET(ps_attr->w_attr, SOD_k_ATTR_PDO_MAP) &&
+#ifdef TX_SPDO
+                        EPLS_IS_BIT_SET(ps_attr->w_attr, SOD_k_ATTR_RO)
+#endif
+#ifdef RX_SPDO
+                        EPLS_IS_BIT_SET(ps_attr->w_attr, SOD_k_ATTR_WO)
+#endif
+                )
+                {
+                    /* mapped object is read */
+                    pv_data = SOD_ReadVirt(B_INSTNUM_ &s_objAcs, ps_errRes);
+
+                    /* if read access was successful */
+                    if (pv_data != NULL)
+                    {
+                        /* b_subIdx : 1..x ; as_spdo[0..x-1] ==> (b_subIdx-1) */
+                        b_spdoSubIdx--;
+                        ps_mappingEntry = &(po_this->ps_mappPara + w_spdoIdx)->
+                                as_mappedObject[b_spdoSubIdx];
+                        /* set mapping parameters in the SPDO structure */
+                        ps_mappingEntry->pv_data = pv_data;
+#ifdef RX_SPDO
+                        ps_mappingEntry->pv_defValue = ps_attr->pv_defValue;
+#endif
+                        ps_mappingEntry->e_dataType = ps_attr->e_dataType;
+                        ps_mappingEntry->b_dataLen = (UINT8)(b_len / k_NO_BITS_PER_BYTE);
+
+                        o_ret = TRUE;
+
+                        ps_errRes->w_errorCode = SOD_k_ERR_NO;
+                        ps_errRes->e_abortCode = SOD_ABT_NO_ERROR;
+                    }
+                    else /* SOD read access failed */
+                    {
+#if (SOD_cfg_APPLICATION_OBJ == EPLS_k_DISABLE)
+#pragma CTC SKIP
+#endif
+                        /* if the SOD object is not readable or
+                  a callback abort happened */
+                        if (ps_errRes->w_errorCode == SOD_k_ERR_CLBK_ABORT_BR)
+#if (SOD_cfg_APPLICATION_OBJ == EPLS_k_DISABLE)
+#pragma CTC ENDSKIP
+#endif
+                        {
+                            ps_errRes->w_errorCode = SPDO_k_ERR_MAP_OBJ;
+                            ps_errRes->e_abortCode = SOD_ABT_OBJ_NOT_MAPPABLE;
+                        }
+                    }
+                }
+                else /* object is not mappable */
+                {
+                    ps_errRes->w_errorCode = SPDO_k_ERR_MAP_OBJ;
+                    ps_errRes->e_abortCode = SOD_ABT_OBJ_NOT_MAPPABLE;
+                }
+            }
+            else /* SOD attribute is not available */
+            {
+
+                ps_errRes->w_errorCode = SPDO_k_ERR_MAP_OBJ;
+                ps_errRes->e_abortCode = SOD_ABT_OBJ_NOT_MAPPABLE;
+
+                /* no else : other error happened */
+            }
+        }
+    }
+
+    /* call the Control Flow Monitoring */
+    SCFM_TACK_PATH();
+
+    return o_ret;
+}
+
+/**
+ * @brief This function adds a mapped object to the byte array.
+ *
+ * @param po_this pointer to the SPDO mapping parameter (not checked, only called with reference to struct in SPDO_MappActivate()) valid range: <> NULL
+ * @param b_actBytePtrIdx index of the actual byte pointer to be initialized (not checked, checked in SPDO_MappActivate()) valid range: 0..<SPDO_cfg_MAX_LEN_OF_SPDO-1>
+ * @param e_dataType data type of the mapped object (not checked, only called with enum value in SPDO_MappActivate()) valid range: EPLS_t_DATATYPE
+ * @param pb_src pointer to the mapped SOD object or a dummy variable (pointer not checked, checked in SPDO_MappActivate()) valid range: <> NULL
+ * @param b_len length of the mapped object (not checked, checked in SPDO_MappActivate()) valid range: (UINT8)
+ */
+static void AddObjToByteArray(t_MAPP_PARAM *po_this, UINT8 b_actBytePtrIdx,
+        EPLS_t_DATATYPE e_dataType, UINT8 *pb_src,
+        UINT8 b_len)
+{ /*lint !e960 see Remarks of this file */
+    UINT32 i; /*lint !e960 see Remarks of this file */
+#if (ENDIAN == LITTLE)
+    e_dataType = e_dataType; /* to avoid compiler warning */
+#endif
+
+    /* for the payload data byte in the SPDO */
+    for(i = 0U; i < b_len; i++)
+    {
+#if (ENDIAN == BIG)
+        /* if DOMAIN,Visible or Octet string */
+        if ((e_dataType == EPLS_k_DOMAIN)         ||
+                (e_dataType == EPLS_k_VISIBLE_STRING) ||
+                (e_dataType == EPLS_k_OCTET_STRING))
+        {
+            po_this->apb_DataForSpdo[i+b_actBytePtrIdx] = ADD_OFFSET(pb_src, i);
+        }
+        /* else other data type */
+        else
+        {
+            po_this->apb_DataForSpdo[i+b_actBytePtrIdx] =
+                    ADD_OFFSET(pb_src, (b_len-i-1));
+        }
+#else
+        po_this->apb_DataForSpdo[i+b_actBytePtrIdx] = ADD_OFFSET(pb_src, i);
+#endif
+    }
+    /* call the Control Flow Monitoring */
+    SCFM_TACK_PATH();
+}
+
+/**
+ * @brief This function checks whether the data length in the structure
+ *               of the mapping entry and the mapped object length are the same.
+ *
+ * @param w_objAttr attribute of the mapped SOD object (not checked), valid range: UINT16
+ * @param dw_objLen object length of the mapped SOD object (not checked), valid range: UINT32
+ * @param b_mappLen data length in the structure of the mapping entry (checked), valid range: actual length of the mapped object
+ *
+ * @return
+ * - TRUE           - length is OK
+ * - FALSE          - length is wrong
+ *
+ */
+static BOOLEAN MappLenOk(UINT16 w_objAttr, UINT32 dw_objLen,
+        UINT8 b_mappLen)
+{ /*lint !e960 see Remarks of this file */
+    BOOLEAN o_ret = FALSE; /* return value */ /*lint !e960 */
+
+    /* if length check is activated */
+    if (EPLS_IS_BIT_RESET(w_objAttr, SOD_k_ATTR_NO_LEN_CHK))
+    {
+        /* if the length in the structure of the mapping entry is OK */
+        if (b_mappLen == (dw_objLen * k_NO_BITS_PER_BYTE))
+        {
+            o_ret = TRUE;
+        }
+        /* no else : the data length in the structure of the mapping entry is wrong */
+    }
+    else /* length check is deactivated */
+    {
+        o_ret = TRUE;
+    }
+
+    /* call the Control Flow Monitoring */
+    SCFM_TACK_PATH();
+
+    return o_ret;
+}
+
+/** @} */

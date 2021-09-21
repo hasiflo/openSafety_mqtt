@@ -1,0 +1,54 @@
+digraph sn_address_verification {
+    
+    graph [ compound = true, rankdir="TB", nodesep=0.5, ranksep=0.8 ];
+    node [ shape=box, style="rounded" ];
+
+    A [label="", shape="circle", style=filled, fillcolor="#000000", color="#000000"];
+
+    SCM1 [ label="SNMT_Assign_SADR" ];
+
+    SN1 [ label="Wait for SNMT_SADR_ASSIGNED" ];
+    SCM2 [ label="SNMT_Request_UDID" ];
+    { rank=same; SN1; SCM2 };    
+
+    SN2 [ label="Wait for SNMT_Response_UDID" ];
+    
+    SCM3 [ label="Correct SADR" ];
+    SCM4 [ label="Wrong SADR" ];
+    SCM5 [ label="UDID Mismatch" ];
+    { rank=same; SCM3; SCM4; SCM5 };
+
+    SCM6 [ label="Assign UDID of SCM" ];
+    SCM7 [ label="SN Missing" ];
+    { rank=same; SCM6; SCM7 };
+
+    Dec1 [ shape="diamond" label="" ];
+    SCM8 [ label="Initialize CT on SN" ];
+    SCM9 [ label="SN Error Init CT" ];
+    { rank=same; Dec1; SCM8; SCM9 };
+    
+    B [ label="", shape="doublecircle", style=filled, fillcolor="#000000", color="#000000"];
+
+    A->SCM1 [ label="Module Status => missing", weight=9 ];
+    SCM1->SN1 [ weight=9];
+    SN1->SCM2 [ label="Timeout" ];
+    SCM2->SN2 [ label="expected UDID received", weight=9 ];
+    SN2->SCM5 [ label="unexpected UDID received" ];
+    SN2->SCM1;
+    SN1->SCM3 [ label="SNMT_SADR_Assigned OK", weight=9];    
+    SN1->SCM4 [ label="expected UDID and wrong SADR"];
+
+    SCM3->SCM6 [ label="Module Status => valid", weight=9 ];
+    SCM4->SCM6 [ label="Module Status => wrong SADR" ];
+    SCM5->SCM6 [ label="Module Status => UDID mismatch" ];
+
+    SN2->SCM7 [ label="Timeout", weight=5 ];
+    SCM6->SCM7 [ label="Timeout or Failed" ];
+    SCM6->Dec1 [ label="Optionflag '40Bit counter for SN' set?", weight=9 ];
+    SCM7->SCM9 [ label="Module Status => Missing", weight=5 ];
+    Dec1->SCM8 [ label="yes" ];
+    SCM8->SCM9 [ label="Timeout or Failed" ];
+    Dec1->B [ label="no", weight=9 ];
+    SCM8->B;
+    SCM9->B [ label="Module Status => Error Init CT" ];
+}

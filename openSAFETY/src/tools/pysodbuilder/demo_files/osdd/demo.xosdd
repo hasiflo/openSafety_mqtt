@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="ASCII" standalone="yes"?>
+<osdd Version="1.5" xmlns:ns2="http://www.ethernet-powerlink.org/osdd/Localize" xmlns="http://www.ethernet-powerlink.org/osdd">
+    <Module openSafetyRelease="1.5" DefaultCRC32="0xd7620683" id="demo" Name="demo">
+        <Description>demo</Description>
+        <Languages>
+            <Default CRC32="0xa1a5cd10"/>
+        </Languages>
+        <ModuleDefinition>
+            <DeviceInformation>
+                <VendorID>00:12:34</VendorID>
+                <ProductCode>0x0001</ProductCode>
+                <Revision>
+                    <Date>2015-07-01T16:31:00</Date>
+                    <Number>1.0.0</Number>
+                </Revision>
+            </DeviceInformation>
+            <TimeConfiguration>
+                <QuartzTolerance>50ppm</QuartzTolerance>
+                <MinReactionTime>500</MinReactionTime>
+            </TimeConfiguration>
+            <DataTransport>
+                <ACyclicTransport Name="SSDO_IN" Direction="Input" OctetSize="27">
+                    <DataAlignment Type="ByteSize" Value="27"/>
+                </ACyclicTransport>
+                <ACyclicTransport Name="SSDO_OUT" Direction="Output" OctetSize="27">
+                    <DataAlignment Type="ByteSize" Value="27"/>
+                </ACyclicTransport>
+            </DataTransport>
+        </ModuleDefinition>
+        <DesignConfiguration>
+            <ModuleSettings>
+                <SettingsGroup id="GenericParameters">
+                    <Setting Type="UInt32" Value="100" Visibility="Overall" id="DefaultSetting01">
+                        <ParameterStream Position="3"/>
+                    </Setting>
+                    <Setting Type="UInt16" Value="100" Visibility="Overall" id="DefaultSetting02">
+                        <ParameterStream Position="4"/>
+                    </Setting>
+                    <Setting Type="UInt16" Value="100" Visibility="Overall" id="DefaultSetting03">
+                        <ParameterStream Position="5"/>
+                    </Setting>
+                </SettingsGroup>
+            </ModuleSettings>
+        </DesignConfiguration>
+        <ChannelConfiguration>
+            <DataTransport>
+                <SPDOTransport MaxNrMappings="2" MaxReactionTime="100" Name="SafeIN" Direction="Input" OctetSize="15">
+                    <DataAlignment Type="ByteSize" Value="15"/>
+                </SPDOTransport>
+                <SPDOTransport MaxNrMappings="2" MaxReactionTime="100" Name="SafeOUT" Direction="Output" OctetSize="15">
+                    <DataAlignment Type="ByteSize" Value="15"/>
+                </SPDOTransport>
+            </DataTransport>
+            <ChannelGroup id="InputSafeChannels" Name="InputSafeChannels">
+                <Channel isSafe="true" id="SafeInput01">
+                    <Description>24 VDC, sink</Description>
+                    <DataValue Type="UInt8">
+                        <Transport Name="SafeIN" Index="0x04"/>
+                        <SODPosition Index="0x6000" SubIndex="0x01"/>
+                    </DataValue>
+                </Channel>
+                <Channel isSafe="true" id="SafeInput02">
+                    <Description>24 VDC, sink</Description>
+                    <DataValue Type="UInt8">
+                        <Transport Name="SafeIN" Index="0x05"/>
+                        <SODPosition Index="0x6000" SubIndex="0x02"/>
+                    </DataValue>
+                </Channel>
+            </ChannelGroup>
+            <ChannelGroup id="OutputSafeChannels" Name="OutputSafeChannels">
+                <Channel isSafe="true" id="SafeOutput01">
+                    <DataValue Type="UInt8">
+                        <Transport Name="SafeOUT" Index="0x04"/>
+                        <SODPosition Index="0x6200" SubIndex="0x01"/>
+                    </DataValue>
+                </Channel>
+                <Channel isSafe="true" id="SafeOutput02">
+                    <DataValue Type="UInt8">
+                        <Transport Name="SafeOUT" Index="0x05"/>
+                        <SODPosition Index="0x6200" SubIndex="0x02"/>
+                    </DataValue>
+                </Channel>
+            </ChannelGroup>
+        </ChannelConfiguration>
+    </Module>
+</osdd>

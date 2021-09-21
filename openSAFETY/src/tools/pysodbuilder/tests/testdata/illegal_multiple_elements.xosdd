@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<osdd xmlns="http://www.ethernet-powerlink.org/osdd" Version="1.5" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.ethernet-powerlink.org/osdd osdd_1.5.xsd">
+    <Module openSafetyRelease="1.5" DefaultCRC32="0x439a71f8" isSCM="false" id="demo-sn-gpio">
+        <Description>Safe IO Module, 4 Bytes Inputs, 4 Bytes Outputs</Description>
+        <Languages>
+            <Default CRC32="0x5e276a3b"/>
+        </Languages>
+        <ModuleDefinition>
+            <DeviceInformation>
+                <VendorID>00:60:65</VendorID>
+                <ProductCode>0x0001</ProductCode>
+                <Revision>
+                    <Date>2014-02-15T13:11:00</Date>
+                    <Number>1.0.0.0</Number>
+                </Revision>
+                <NrParameterCRC>1</NrParameterCRC>
+            </DeviceInformation>
+            <TimeConfiguration>
+                <QuartzTolerance>50ppm</QuartzTolerance>
+                <MinReactionTime>1</MinReactionTime>
+            </TimeConfiguration>
+            <DataTransport>
+                <ACyclicTransport Name="Asnd" Direction="Both" OctetSize="32">
+                    <DataAlignment Type="2Byte" Value="32"/>
+                </ACyclicTransport>
+            </DataTransport>
+        </ModuleDefinition>
+        <DesignConfiguration>
+            <ModuleSettings>
+                <SettingsGroup id="GenericParameters">
+                    <Setting id="DefaultSetting01" Name="TestSetting01" Type="UInt32" Value="100" Visibility="SafetyOnly" MinRole="Development"/>
+                    <Setting id="DefaultSetting02" Name="TestSetting02" Type="UInt16" Value="50"  Visibility="SafetyOnly" MinRole="Development"/>
+                    <Setting id="DefaultSetting03" Name="TestSetting03" Type="UInt16" Value="70"  Visibility="SafetyOnly" MinRole="Development"/>
+                </SettingsGroup>
+            </ModuleSettings>
+        </DesignConfiguration>
+        <ChannelConfiguration>
+            <DataTransport>
+                <SPDOTransport Name="SafeIN" Direction="Input" OctetSize="19" MaxNrMappings="4" MaxReactionTime="100">
+                    <DataAlignment Type="2Byte" Value="19"/>
+                </SPDOTransport>
+                <SPDOTransport Name="SafeOUT" Direction="Output" OctetSize="19" MaxNrMappings="4" MaxReactionTime="50">
+                    <DataAlignment Type="2Byte" Value="19"/>
+                </SPDOTransport>
+            </DataTransport>
+            <ChannelGroup id="General" Name="General">
+                <Description>General channels</Description>
+                <Channel isSafe="true" id="SafeModuleOk">
+                    <DataValue Type="Boolean">
+                        <ConnectionValidation/>
+                    </DataValue>
+                </Channel>
+            </ChannelGroup>
+            <ChannelGroup id="InputSafeChannels" Name="Input Safe Channels">
+                <Channel isSafe="true" id="SafeInput01">
+                    <DataValue Type="UInt8">
+                        <Transport Name="SafeIN" Index="0x01"/>
+                        <SODPosition Index="0x6000" SubIndex="0x01"/>
+                    </DataValue>
+                </Channel>
+                <Channel isSafe="true" id="SafeInput02">
+                    <DataValue Type="UInt8">
+                        <Transport Name="SafeIN" Index="0x02"/>
+                        <SODPosition Index="0x6000" SubIndex="0x02"/>
+                    </DataValue>
+                </Channel>
+                <Channel isSafe="true" id="SafeInput03">
+                    <DataValue Type="UInt8">
+                        <Transport Name="SafeIN" Index="0x03"/>
+                        <SODPosition Index="0x6000" SubIndex="0x03"/>
+                    </DataValue>
+                </Channel>
+                <Channel isSafe="true" id="SafeInput04">
+                    <DataValue Type="UInt8">
+                        <Transport Name="SafeIN" Index="0x04"/>
+                        <SODPosition Index="0x6000" SubIndex="0x04"/>
+                    </DataValue>
+                </Channel>
+            </ChannelGroup>
+            <ChannelGroup id="OutputSafeChannels" Name="Output Safe Channels">
+                <Channel isSafe="true" id="SafeOutput01">
+                    <DataValue Type="UInt8">
+                        <Transport Name="SafeOUT" Index="0x01"/>
+                        <SODPosition Index="0x6200" SubIndex="0x01"/>
+                    </DataValue>
+                </Channel>
+                <Channel isSafe="true" id="SafeOutput02">
+                    <DataValue Type="UInt8">
+                        <Transport Name="SafeOUT" Index="0x02"/>
+                        <SODPosition Index="0x6200" SubIndex="0x02"/>
+                    </DataValue>
+                </Channel>
+                <Channel isSafe="true" id="SafeOutput03">
+                    <DataValue Type="UInt8">
+                        <Transport Name="SafeOUT" Index="0x03"/>
+                        <SODPosition Index="0x6200" SubIndex="0x03"/>
+                    </DataValue>
+                </Channel>
+                <Channel isSafe="true" id="SafeOutput04">
+                    <DataValue Type="UInt8">
+                        <Transport Name="SafeOUT" Index="0x04"/>
+                        <SODPosition Index="0x6200" SubIndex="0x04"/>
+                    </DataValue>
+                </Channel>
+            </ChannelGroup>
+        </ChannelConfiguration>
+        <ChannelConfiguration>
+            <DataTransport>
+                <SPDOTransport Name="SafeIN" Direction="Input" OctetSize="19" MaxNrMappings="4" MaxReactionTime="100">
+                    <DataAlignment Type="2Byte" Value="19"/>
+                </SPDOTransport>
+                <SPDOTransport Name="SafeOUT" Direction="Output" OctetSize="19" MaxNrMappings="4" MaxReactionTime="50">
+                    <DataAlignment Type="2Byte" Value="19"/>
+                </SPDOTransport>
+            </DataTransport>
+            <ChannelGroup id="General" Name="General">
+                <Description>General channels</Description>
+                <Channel isSafe="true" id="SafeModuleOk">
+                    <DataValue Type="Boolean">
+                        <ConnectionValidation/>
+                    </DataValue>
+                </Channel>
+            </ChannelGroup>
+            <ChannelGroup id="InputSafeChannels" Name="Input Safe Channels">
+                <Channel isSafe="true" id="SafeInput01">
+                    <DataValue Type="UInt8">
+                        <Transport Name="SafeIN" Index="0x01"/>
+                        <SODPosition Index="0x6000" SubIndex="0x01"/>
+                    </DataValue>
+                </Channel>
+                <Channel isSafe="true" id="SafeInput02">
+                    <DataValue Type="UInt8">
+                        <Transport Name="SafeIN" Index="0x02"/>
+                        <SODPosition Index="0x6000" SubIndex="0x02"/>
+                    </DataValue>
+                </Channel>
+                <Channel isSafe="true" id="SafeInput03">
+                    <DataValue Type="UInt8">
+                        <Transport Name="SafeIN" Index="0x03"/>
+                        <SODPosition Index="0x6000" SubIndex="0x03"/>
+                    </DataValue>
+                </Channel>
+                <Channel isSafe="true" id="SafeInput04">
+                    <DataValue Type="UInt8">
+                        <Transport Name="SafeIN" Index="0x04"/>
+                        <SODPosition Index="0x6000" SubIndex="0x04"/>
+                    </DataValue>
+                </Channel>
+            </ChannelGroup>
+            <ChannelGroup id="OutputSafeChannels" Name="Output Safe Channels">
+                <Channel isSafe="true" id="SafeOutput01">
+                    <DataValue Type="UInt8">
+                        <Transport Name="SafeOUT" Index="0x01"/>
+                        <SODPosition Index="0x6200" SubIndex="0x01"/>
+                    </DataValue>
+                </Channel>
+                <Channel isSafe="true" id="SafeOutput02">
+                    <DataValue Type="UInt8">
+                        <Transport Name="SafeOUT" Index="0x02"/>
+                        <SODPosition Index="0x6200" SubIndex="0x02"/>
+                    </DataValue>
+                </Channel>
+                <Channel isSafe="true" id="SafeOutput03">
+                    <DataValue Type="UInt8">
+                        <Transport Name="SafeOUT" Index="0x03"/>
+                        <SODPosition Index="0x6200" SubIndex="0x03"/>
+                    </DataValue>
+                </Channel>
+                <Channel isSafe="true" id="SafeOutput04">
+                    <DataValue Type="UInt8">
+                        <Transport Name="SafeOUT" Index="0x04"/>
+                        <SODPosition Index="0x6200" SubIndex="0x04"/>
+                    </DataValue>
+                </Channel>
+            </ChannelGroup>
+        </ChannelConfiguration>
+    </Module>
+</osdd>

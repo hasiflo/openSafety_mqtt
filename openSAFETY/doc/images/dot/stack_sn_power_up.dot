@@ -1,0 +1,14 @@
+digraph sn_power_up {
+    graph [ compound = true, nodesep=0.5, ranksep=0.8 ];
+    node [ shape=box ];
+
+    I [ label="Initialization",style="rounded" ];
+    PO [ label="Pre-Operational",style="rounded" ];
+    O [ label="Operational",style="rounded" ];
+
+    I -> PO;
+    PO -> O [ weight=10, label="Data may be saved" ];
+    O -> O  [ label="Configuration unchanged" ];
+    O -> PO [ label="Lifeguard timeout\nSCM asks for PreOp" ];
+    
+}

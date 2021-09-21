@@ -1,0 +1,49 @@
+include README.txt
+include LICENSE.txt
+include setup.py
+
+include pysodb/pysodbmain.py
+
+include pysodb/binding/README.txt
+include pysodb/binding/__init__.py
+include pysodb/codegeneration/codegenutil.py
+include pysodb/codegeneration/common.py
+include pysodb/codegeneration/c_code_util.py
+include pysodb/codegeneration/c_target_data.py
+include pysodb/codegeneration/genappc.py
+include pysodb/codegeneration/geneplscfgh.py
+include pysodb/codegeneration/gensodc.py
+include pysodb/codegeneration/gensodutilh.py
+include pysodb/codegeneration/__init__.py
+include pysodb/core/argparser.py
+include pysodb/core/codegenerator.py
+include pysodb/core/common.py
+include pysodb/core/configparser.py
+include pysodb/core/errorhandler.py
+include pysodb/core/filehandling.py
+include pysodb/core/util.py
+include pysodb/core/versioninfo.py
+include pysodb/core/__init__.py
+
+include pysodb/osddprocessing/base.py
+include pysodb/osddprocessing/mainprocessing.py
+include pysodb/osddprocessing/postprocessing.py
+include pysodb/osddprocessing/preprocessing.py
+include pysodb/osddprocessing/processingdata.py
+include pysodb/osddprocessing/__init__.py
+
+include pysodb/util/constants.py
+include pysodb/util/defaultsod.py
+include pysodb/util/macro.py
+include pysodb/util/osdd_data.py
+include pysodb/util/sod_data.py
+include pysodb/util/stringfunctions.py
+include pysodb/util/structure.py
+include pysodb/util/type_conversion.py
+include pysodb/util/__init__.py
+include pysodb/__init__.py
+
+include scripts/pysodbuilder.py
+
+recursive-include tests *
+recursive-exclude tests *.pyc __pycache__

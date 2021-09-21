@@ -1,0 +1,4 @@
+Name: openSAFETY V1.5.2 - git version
+Version: 1.5.2
+Internal commit 5571c597312fcf0e1fc22a12a474cc445389780e
+Internal change I7cbab71e192180375564e84a13e5a2d22e51c466

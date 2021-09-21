@@ -1,0 +1,40 @@
+
+IF ( NOT EXISTS ${CRC_LOCATION} )
+    MESSAGE ( FATAL_ERROR "checkcrc could not be found at location: ${CRC_LOCATION}" )
+    RETURN ()
+ENDIF ( NOT EXISTS ${CRC_LOCATION} )
+
+IF ( NOT EXISTS ${LIST} )
+    MESSAGE ( FATAL_ERROR "checkcrc list file could not be found at location: ${LIST}" )
+    RETURN ()
+ENDIF ( NOT EXISTS ${LIST} )
+
+IF ( NOT EXISTS ${FILE} )
+    MESSAGE ( FATAL_ERROR "file to be checked could not be found at location: ${FILE}" )
+    RETURN ()
+ENDIF ( NOT EXISTS ${FILE} )
+
+FILE ( TO_NATIVE_PATH "${CRC_LOCATION}" NATIVE_CRC_LOCATION )
+FILE ( TO_NATIVE_PATH "${LIST}" NATIVE_LIST )
+FILE ( TO_NATIVE_PATH "${FILE}" NATIVE_FILE )
+
+EXECUTE_PROCESS (
+    COMMAND ${NATIVE_CRC_LOCATION} ${COLOR} -q -l ${NATIVE_LIST} -f ${NATIVE_FILE}
+    RESULT_VARIABLE PROCESS_RESULT
+    ERROR_VARIABLE  PROCESS_ERROR
+)
+
+IF ( NOT ${PROCESS_RESULT} EQUAL 0 )
+    IF ( ${CRC_CHECK} STREQUAL "ON" )
+        MESSAGE ( STATUS "WARNING: CRC Check (${PROCESS_RESULT}) failed for file ${FILE}" )
+
+        IF ( ${PROCESS_RESULT} EQUAL 9 )
+            MESSAGE ( FATAL_ERROR "The file ${FILE} is not present in the current checksum list" )
+        ENDIF ( ${PROCESS_RESULT} EQUAL 9 )
+
+    ELSE ( ${CRC_CHECK} STREQUAL "ON" )
+        MESSAGE ( FATAL_ERROR "FATAL: ${PROCESS_ERROR}" )
+    ENDIF ( ${CRC_CHECK} STREQUAL "ON" )
+
+ENDIF ( NOT ${PROCESS_RESULT} EQUAL 0 )
+

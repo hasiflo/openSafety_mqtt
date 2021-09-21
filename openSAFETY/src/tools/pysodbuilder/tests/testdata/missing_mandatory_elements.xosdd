@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<osdd xmlns="http://www.ethernet-powerlink.org/osdd" Version="1.5" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.ethernet-powerlink.org/osdd osdd_1.5.xsd">
+    <Module openSafetyRelease="1.5" DefaultCRC32="0x439a71f8" isSCM="false" id="demo-sn-gpio">
+        <Description>Safe IO Module, 4 Bytes Inputs, 4 Bytes Outputs</Description>
+        <Languages>
+            <Default CRC32="0x5e276a3b"/>
+        </Languages>
+        <ModuleDefinition>
+            <DeviceInformation>
+                <VendorID>00:60:65</VendorID>
+                <ProductCode>0x0001</ProductCode>
+                <Revision>
+                    <Date>2014-02-15T13:11:00</Date>
+                    <Number>1.0.0.0</Number>
+                </Revision>
+                <NrParameterCRC>1</NrParameterCRC>
+            </DeviceInformation>
+            <DataTransport>
+                <ACyclicTransport Name="Asnd" Direction="Both" OctetSize="32">
+                    <DataAlignment Type="2Byte" Value="32"/>
+                </ACyclicTransport>
+            </DataTransport>
+        </ModuleDefinition>
+        <DesignConfiguration>
+            <ModuleSettings>
+                <SettingsGroup id="GenericParameters">
+                    <Setting id="DefaultSetting01" Name="TestSetting01" Type="UInt32" Value="100" Visibility="SafetyOnly" MinRole="Development"/>
+                    <Setting id="DefaultSetting02" Name="TestSetting02" Type="UInt16" Value="50"  Visibility="SafetyOnly" MinRole="Development"/>
+                    <Setting id="DefaultSetting03" Name="TestSetting03" Type="UInt16" Value="70"  Visibility="SafetyOnly" MinRole="Development"/>
+                </SettingsGroup>
+            </ModuleSettings>
+        </DesignConfiguration>
+    </Module>
+</osdd>

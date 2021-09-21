@@ -1,0 +1,19 @@
+# .coveragerc to control coverage.py
+[run]
+branch = False
+source = pysodb
+omit = pysodb/dummymain.py,pysodb/binding/*
+
+[report]
+# Regexes for lines to exclude from consideration
+exclude_lines =
+    # Have to re-enable the standard pragma
+    coverage#: no cover
+
+    # Don't complain if non-runnable code isn't run:
+    if __name__ == '__main__':
+    if sys.version_info.major == 2:
+    elif sys.version_info.major >= 3:
+    errorhandler\.ErrorHandler\.error('Used Python Version is not supported\.')
+
+ignore_errors = False

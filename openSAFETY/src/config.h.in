@@ -1,0 +1,115 @@
+/**
+ * \addtogroup Tools
+ * \{
+ * \addtogroup config_h openSAFETY SDK config.h
+ * \{
+ *
+ * \brief Defines various definitions checked for by the cmake build system
+ *
+ * The CMake build system performs various checks for the plattform it builds on, as well
+ * as the target executables it will use for generating binaries. These checks can be used
+ * by all tools as well as targets to configure source-code accordingly.
+ *
+ * \attention This file is generated during every run of cmake (which may happen also
+ * during a make build-step), from config.h.in in the main source directory
+ *
+ * \file config.h
+ *
+ * \copyright Copyright (c) 2015,  Bernecker + Rainer Industrie-Elektronik Ges.m.b.H
+ * \copyright All rights reserved, Bernecker + Rainer Industrie-Elektronik Ges.m.b.H
+ * \copyright This source code is free software; you can redistribute it and/or modify it under the terms of the BSD license (according to License.txt).
+ *
+ * \author Roland Knall, Bernecker + Rainer Industrie-Elektronik Ges.m.b.H
+ */
+
+#ifndef OPENSAFETY_SDK_CONFIG_H_
+#define OPENSAFETY_SDK_CONFIG_H_
+
+/** openSAFETY Major Version */
+#define openSAFETY_VERSION_MAJOR @openSAFETY_VERSION@
+/** openSAFETY Minor Version */
+#define openSAFETY_VERSION_MINOR @openSAFETY_CERTIFICATION@
+/** openSAFETY Release Version */
+#define openSAFETY_VERSION_RELEASE @openSAFETY_VERSION_RELEASE@
+/** openSAFETY Release Version Name */
+#define openSAFETY_VERSION_NAME @openSAFETY_VERSION_NAME@
+
+/** Define for Windows target builds (e.g. locally ran Unittests) */
+#cmakedefine TARGET_WINDOWS 1
+/** Define for a generic target builds, meaning it general gcc builds */
+#cmakedefine TARGET_GENERIC 1
+/** The GCC compiler in question is a arm-elf target compiler */
+#cmakedefine TARGET_ARM_ELF 1
+/** The GCC compiler in question is a cygwin compiler */
+#cmakedefine TARGET_CYGWIN 1
+
+/** Target system provides inet_pton */
+#cmakedefine HAVE_INET_PTON 1
+/** Header sys/socket.h exists */
+#cmakedefine HAVE_SYS_SOCKET_H 1
+/** Header winsock2.h exists */
+#cmakedefine HAVE_WINSOCK2_H 1
+/** Header netinet.h.h exists */
+#cmakedefine HAVE_NETINET_IN_H 1
+/** Header arpa/inet.h exists */
+#cmakedefine HAVE_ARPA_INET_H 1
+/** Header arpa/nameser.h exists */
+#cmakedefine HAVE_ARPA_NAMESER_H 1
+/** Header sys/param.h exists */
+#cmakedefine HAVE_SYS_PARAM_H 1
+/** Header sys/types.h exists */
+#cmakedefine HAVE_SYS_TYPES_H 1
+
+/** Header stdarg.h exists */
+#cmakedefine HAVE_STDARG_H 1
+/** Header stdint.h exists */
+#cmakedefine HAVE_STDINT_H 1
+/** Header stdbool.h exists */
+#cmakedefine HAVE_STDBOOL_H 1
+
+/** Header pthread.h exists */
+#cmakedefine HAVE_PTHREAD_H 1
+
+/** Datatype bool is defined */
+#cmakedefine HAVE_BOOL 1
+/** Datatype char is defined */
+#cmakedefine HAVE_CHAR 1
+/** Datatype short is defined */
+#cmakedefine HAVE_SHORT 1
+/** Datatype int is defined */
+#cmakedefine HAVE_INT 1
+/** Datatype long is defined */
+#cmakedefine HAVE_LONG 1
+/** Datatype dlong is defined */
+#cmakedefine HAVE_DLONG 1
+/** Datatype float is defined */
+#cmakedefine HAVE_FLOAT 1
+/** Datatype double is defined */
+#cmakedefine HAVE_DOUBLE 1
+
+/** Function snprintf exists and can be used */
+#cmakedefine HAVE_SNPRINTF 1
+/** Function snprintf exists and can be used */
+#cmakedefine HAVE__SNPRINTF 1
+/** Function strdup exists and can be used */
+#cmakedefine HAVE_STRDUP 1
+/** Function vsnprintf exists and can be used */
+#cmakedefine HAVE_VSNPRINTF 1
+/** Function atoi exists and can be used */
+#cmakedefine HAVE_ATOI 1
+
+/** oscrcmarker can be used (means we have a gcc system) */
+#cmakedefine DO_CRC_MARK 1
+
+/* Use this switch to enable debug output */
+#cmakedefine OSDD_ENABLE_DEBUG_OUTPUT 1
+
+/* Use this switch to enable CRC debug output */
+#cmakedefine OSDD_ENABLE_DEBUG_CRC 1
+
+#endif /* OPENSAFETY_SDK_CONFIG_H_ */
+
+/**
+ * \}
+ * \}
+ */

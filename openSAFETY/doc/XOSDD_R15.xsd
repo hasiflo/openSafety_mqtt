@@ -1,0 +1,2184 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+*******************************************************************************
+EPSG - ETHERNET Powerlink Standardization Group
+POWERLINK-Office of the EPSG
+Bonsaiweg 6
+D-15370 Fredersdorf
+Germany
+Phone  +49.33439.539270
+Fax  +49.33439.539272
+info@ethernet-powerlink.org
+www.open-safety.org
+*******************************************************************************
+openSAFETY Device Description File Format Definition Schema
+*******************************************************************************
+File:        osdd.xsd
+Version:     0.17
+*******************************************************************************
+History:	v0.14 Roland Knall, B&R  - Initial Version
+			v0.15 Christoph Rücker, B&R	- Update EPSG contact data
+						- Add isSCM attribute to Module element
+						- Remove TimeGuard element
+						- Add TimeConfiguration element
+						- Add ParameterConstant element
+						- Delete deprecated DataSequence element
+						- Add CopyToAllSN attribute
+						- Add ManufacturerSpecificObjectDictionary element
+						- Add With conditional element
+						- Replace xs:string with tNonEmptyString if applicable
+						- Add ModuleFunctions element
+						- Add MaxNrMappings attribute
+						- Add NrParameterCRC element
+						- Add FrontFoto and Icon element
+						- Add Topology element
+						- Add Conditions element to Channel definition
+			v0.16 Roland Knall, B&R  -
+			v0.17 Alexander Brunner, B&R	- Support Vision profile changes
+*******************************************************************************
+-->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+	xmlns:osdd="http://www.ethernet-powerlink.org/osdd" xmlns:xi="http://www.w3.org/2001/XInclude"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	targetNamespace="http://www.ethernet-powerlink.org/osdd" elementFormDefault="qualified"
+	xsi:schemaLocation="http://www.ethernet-powerlink.org/osdd osdd.xsd">
+	<xs:element name="osdd">
+		<xs:annotation>
+			<xs:documentation xml:lang="en">The openSAFETY Device
+				Description defines the safety related information needed to
+				integrate the device into existing openSAFETY networks.
+			</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:choice>
+				<xs:sequence>
+					<xs:element ref="osdd:Module" maxOccurs="unbounded"/>
+				</xs:sequence>
+				<xs:sequence>
+					<xs:element ref="osdd:Topology" maxOccurs="unbounded"/>
+				</xs:sequence>
+			</xs:choice>
+			<xs:attribute name="Version" type="osdd:topenSafetyRelease" use="optional" default="1.5"
+			/>
+		</xs:complexType>
+		<xs:unique name="uniqueModuleId">
+			<xs:selector xpath="./osdd:Module"/>
+			<xs:field xpath="@id"/>
+		</xs:unique>
+	</xs:element>
+	<xs:element name="Module">
+		<xs:annotation>
+			<xs:documentation xml:lang="en">An openSAFETY Device
+				Description can contain more than one module, where the section for
+				module is repeated as often as needed
+			</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:all>
+				<xs:element name="Description" type="osdd:tDescription" minOccurs="0">
+					<xs:annotation>
+						<xs:documentation xml:lang="en">Short textual
+							description using the default language, which describes this
+							module.
+						</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+				<xs:element ref="osdd:ModuleFunctions" minOccurs="0"/>
+				<xs:element ref="osdd:Languages"/>
+				<xs:element ref="osdd:ModuleDefinition" minOccurs="0"/>
+				<xs:element ref="osdd:DesignConfiguration" minOccurs="0"/>
+				<xs:element ref="osdd:ChannelConfiguration" minOccurs="0"/>
+				<xs:element ref="osdd:ManufacturerSpecificObjectDictionary" minOccurs="0"/>
+			</xs:all>
+			<xs:attributeGroup ref="osdd:attrIDName">
+				<xs:annotation>
+					<xs:documentation xml:lang="en">The module has to
+						provide an unique ID and a name describing it. The ID will be used
+						to distinguish between known modules. The name shall be used in
+						development environments to display the module.
+					</xs:documentation>
+				</xs:annotation>
+			</xs:attributeGroup>
+			<xs:attribute name="openSafetyRelease" type="osdd:topenSafetyRelease" use="optional"
+				default="1.5">
+				<xs:annotation>
+					<xs:documentation xml:lang="en">This is the minimum
+						required openSAFETY release version to operate the module.
+					</xs:documentation>
+				</xs:annotation>
+			</xs:attribute>
+			<xs:attribute name="DefaultCRC32" type="osdd:hCRC32" use="required">
+				<xs:annotation>
+					<xs:documentation xml:lang="en">The checksum secures
+						the openSAFETY device description against unnoticed changes.
+					</xs:documentation>
+				</xs:annotation>
+			</xs:attribute>
+			<xs:attribute name="isSCM" type="osdd:hTrueFalse" use="optional" default="false">
+				<xs:annotation>
+					<xs:documentation xml:lang="en">The module provides SCM
+						functionality in the openSAFETY network.
+					</xs:documentation>
+				</xs:annotation>
+			</xs:attribute>
+		</xs:complexType>
+		<xs:keyref name="functionTemplate" refer="osdd:activeFunctionTypeKey">
+			<xs:selector xpath=".//osdd:FunctionReference"/>
+			<xs:field xpath="@id"/>
+		</xs:keyref>
+		<xs:key name="activeFunctionTypeKey">
+			<xs:selector xpath=".//osdd:Function"/>
+			<xs:field xpath="@id"/>
+		</xs:key>
+		<xs:keyref name="choiceRangeTemplateIdKeyRef" refer="osdd:choiceRangeTemplateId">
+			<xs:selector xpath=".//osdd:Setting"/>
+			<xs:field xpath="@Template"/>
+		</xs:keyref>
+		<xs:key name="choiceRangeTemplateId">
+			<xs:selector
+				xpath="./osdd:DesignConfiguration/osdd:SettingDataTemplates/osdd:Choice    | ./osdd:DesignConfiguration/osdd:SettingDataTemplates/osdd:Range"/>
+			<xs:field xpath="@id"/>
+		</xs:key>
+		<xs:key name="channelRelationKey">
+			<xs:selector xpath=".//osdd:Channel"/>
+			<xs:field xpath="@id"/>
+		</xs:key>
+		<xs:keyref name="ChannelRelationAnd" refer="osdd:channelRelationKey">
+			<xs:selector xpath=".//osdd:ChannelRef "/>
+			<xs:field xpath="@id"/>
+		</xs:keyref>
+	</xs:element>
+	<xs:element name="Topology">
+		<xs:annotation>
+			<xs:documentation xml:lang="en">The openSAFETY Device Topology defines a safety domain and the corresponding modules within</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="GeneratorDescription">
+					<xs:complexType>
+						<xs:complexContent>
+							<xs:extension base="osdd:tGeneratorDescription">
+								<xs:attribute name="Name" type="osdd:tNonEmptyString" use="required">
+									<xs:annotation>
+										<xs:documentation xml:lang="en">A human-readable name
+							for this element, using the default document language.
+						</xs:documentation>
+									</xs:annotation>
+								</xs:attribute>
+								<xs:attribute name="Version" type="osdd:tNonEmptyString"
+									use="required">
+									<xs:annotation>
+										<xs:documentation xml:lang="en">A human-readable name
+							for this element, using the default document language.
+						</xs:documentation>
+									</xs:annotation>
+								</xs:attribute>
+							</xs:extension>
+						</xs:complexContent>
+					</xs:complexType>
+				</xs:element>
+				<xs:element name="SafetyConfigurationManager"
+					type="osdd:tSafetyConfigurationManager"/>
+				<xs:sequence>
+					<xs:element name="SafetyNode" type="osdd:tSafetyNode" maxOccurs="unbounded"/>
+				</xs:sequence>
+			</xs:sequence>
+			<xs:attribute name="SafetyDomain" type="xs:positiveInteger" use="required"
+				form="unqualified">
+				<xs:annotation>
+					<xs:documentation>Definition of the safety domain for this topology</xs:documentation>
+				</xs:annotation>
+			</xs:attribute>
+		</xs:complexType>
+		<xs:unique name="uniqueSAddr">
+			<xs:selector xpath=".//osdd:SafetyNode"/>
+			<xs:field xpath="@SAddr"/>
+		</xs:unique>
+	</xs:element>
+	<xs:element name="Languages">
+		<xs:annotation>
+			<xs:documentation xml:lang="en">The supported languages
+				for this openSAFETY Device Description. A default language has
+				always to be specified.
+			</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="Default">
+					<xs:annotation>
+						<xs:documentation xml:lang="en">The default language
+							is the language used through out this document.
+						</xs:documentation>
+					</xs:annotation>
+					<xs:complexType>
+						<xs:attribute name="CRC32" type="osdd:hCRC32" use="required">
+							<xs:annotation>
+								<xs:documentation xml:lang="en">Represents the CRC32
+									checksum for this datatype.
+								</xs:documentation>
+							</xs:annotation>
+						</xs:attribute>
+					</xs:complexType>
+				</xs:element>
+				<xs:element name="Extern" minOccurs="0" maxOccurs="unbounded">
+					<xs:annotation>
+						<xs:documentation xml:lang="en">Additional
+							translations can be provided using external XML files. Those
+							files must be implemented using the osddLocalize.xsd XML-Schema
+						</xs:documentation>
+					</xs:annotation>
+					<xs:complexType>
+						<xs:attributeGroup ref="osdd:attrLanguage"/>
+						<xs:attribute name="Location" type="osdd:tNonEmptyString" use="required">
+							<xs:annotation>
+								<xs:documentation xml:lang="en">A path definition,
+									where the language file for the external language can be found.
+									Per definition this can either be a relative path (recommended)
+									or a HTML path, which must be accessible without any login.
+								</xs:documentation>
+							</xs:annotation>
+						</xs:attribute>
+						<xs:attribute name="ref" type="osdd:tNonEmptyString" use="required">
+							<xs:annotation>
+								<xs:documentation xml:lang="en">A reference to the module localization in the external language file.
+								</xs:documentation>
+							</xs:annotation>
+						</xs:attribute>
+					</xs:complexType>
+				</xs:element>
+			</xs:sequence>
+		</xs:complexType>
+		<xs:unique name="uniqueExternLanguage">
+			<xs:selector xpath="./osdd:Extern"/>
+			<xs:field xpath="@Lang"/>
+		</xs:unique>
+	</xs:element>
+	<xs:element name="TimeConfiguration">
+		<xs:annotation>
+			<xs:documentation xml:lang="en">The TimeConfiguration
+				defines the relation between the module hardware to possible timing
+				calculations for the reaction time.
+			</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:all>
+				<xs:element name="QuartzTolerance" type="osdd:hQuartzTolerance" default="50ppm"
+					minOccurs="1">
+					<xs:annotation>
+						<xs:documentation xml:lang="en">QuartzTolerance is
+							used to factor in the timing resolution for the calculation of
+							the safe reaction time.
+						</xs:documentation>
+					</xs:annotation>
+				</xs:element>
+				<xs:element name="MinReactionTime">
+					<xs:annotation>
+						<xs:documentation xml:lang="en">Defines the minimum
+							reaction time for each transport channel, the module supports.
+						</xs:documentation>
+					</xs:annotation>
+					<xs:simpleType>
+						<xs:restriction base="xs:positiveInteger"/>
+					</xs:simpleType>
+				</xs:element>
+			</xs:all>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="ModuleDefinition">
+		<xs:annotation>
+			<xs:documentation xml:lang="en">Settings for the basic
+				openSAFETY communication. Basic settings for the module, like name
+				or vendor ID are set here, as well as time constraints.
+
+				This module is mandatory for a non SCM module only
+			</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="DeviceInformation">
+					<xs:annotation>
+						<xs:documentation xml:lang="en">General information
+							about the device, reflects [openSAFETY Object 0x1018]. Not stored
+							are Serial numbers, Firmware Checksums and Parameter Checksum and
+							TimeStamps.
+						</xs:documentation>
+					</xs:annotation>
+					<xs:complexType>
+						<xs:all>
+							<xs:element name="VendorID" type="osdd:tNonEmptyString">
+								<xs:annotation>
+									<xs:documentation xml:lang="en">A unique vendor ID
+										for the creator of this device. The vendor id consists of 3
+										octets in hex representation, separated by a double-point.
+										(e.g. 00:60:65 for Bernecker&amp;Rainer) [openSAFETY Object
+										0x1018 - 0x01]
+									</xs:documentation>
+								</xs:annotation>
+							</xs:element>
+							<xs:element name="ProductCode" type="osdd:hUINT16">
+								<xs:annotation>
+									<xs:documentation xml:lang="en">An internal code,
+										which references the product uniquely for the vendor.
+										[openSAFETY Object 0x1018 - 0x02]
+									</xs:documentation>
+								</xs:annotation>
+							</xs:element>
+							<xs:element name="FrontPicture" type="osdd:tNonEmptyString"
+								minOccurs="0">
+								<xs:annotation>
+									<xs:documentation xml:lang="en">
+										Optional front
+										photo file to display the module in a design tool.
+									</xs:documentation>
+								</xs:annotation>
+							</xs:element>
+							<xs:element name="Icon" type="osdd:tNonEmptyString" minOccurs="0">
+								<xs:annotation>
+									<xs:documentation xml:lang="en">
+										Optional icon file
+										to display the module in a design tool.
+									</xs:documentation>
+								</xs:annotation>
+							</xs:element>
+							<xs:element name="Revision" type="osdd:tDeviceRevision">
+								<xs:annotation>
+									<xs:documentation xml:lang="en">Development
+										revision for this device.
+									</xs:documentation>
+								</xs:annotation>
+							</xs:element>
+							<xs:element name="NrParameterCRC" type="xs:positiveInteger" default="1"
+								minOccurs="0">
+								<xs:annotation>
+									<xs:documentation xml:lang="en">The number of
+										Parameter CRC checksums of the module.
+									</xs:documentation>
+								</xs:annotation>
+							</xs:element>
+							<xs:element name="Profiles" type="osdd:tProfiles" minOccurs="0"/>
+						</xs:all>
+					</xs:complexType>
+					<xs:unique name="uniqueProfiles">
+						<xs:selector xpath="./osdd:Profiles/osdd:Profile"/>
+						<xs:field xpath="."/>
+					</xs:unique>
+				</xs:element>
+				<xs:element ref="osdd:TimeConfiguration"/>
+				<xs:element name="DataTransport">
+					<xs:annotation>
+						<xs:documentation>Definitions for the acyclic data transport</xs:documentation>
+					</xs:annotation>
+					<xs:complexType>
+						<xs:sequence>
+							<xs:element name="ACyclicTransport" minOccurs="1" maxOccurs="unbounded">
+								<xs:annotation>
+									<xs:documentation>Definitions for the acyclic data transport</xs:documentation>
+								</xs:annotation>
+								<xs:complexType>
+									<xs:complexContent>
+										<xs:extension base="osdd:tDataTransport">
+											<xs:attribute name="useForSCM" type="osdd:hTrueFalse"
+												default="true">
+												<xs:annotation>
+												<xs:documentation>Use this channel for SCM configuration</xs:documentation>
+												</xs:annotation>
+											</xs:attribute>
+										</xs:extension>
+									</xs:complexContent>
+								</xs:complexType>
+							</xs:element>
+							<xs:element name="CrossMapping" minOccurs="0" maxOccurs="2">
+								<xs:annotation>
+									<xs:documentation/>
+								</xs:annotation>
+								<xs:complexType>
+									<xs:attribute name="Direction" type="osdd:tDataDirection"
+										use="required"/>
+									<xs:attribute name="MaxNrMappings" type="xs:nonNegativeInteger"
+										use="required"/>
+									<xs:attribute name="MaxOctetSize" type="xs:positiveInteger"
+										use="required"/>
+								</xs:complexType>
+							</xs:element>
+						</xs:sequence>
+					</xs:complexType>
+				</xs:element>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="DesignConfiguration">
+		<xs:annotation>
+			<xs:documentation xml:lang="en">Definition of Parameters
+				for this module will be defined in this section, including all
+				information which will be downloaded to the module during Power-Up,
+				but which will not be configured using a design tool. [openSAFETY
+				Object 0x101A]
+			</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="SettingDataTemplates" form="qualified" minOccurs="0">
+					<xs:annotation>
+						<xs:documentation xml:lang="en">This defines data
+							templates for setting entries. Using this, one can restrict the
+							possible values entered in a configuration tool, and predefine
+							value ranges for certain settings.
+						</xs:documentation>
+					</xs:annotation>
+					<xs:complexType>
+						<xs:sequence>
+							<xs:choice minOccurs="0">
+								<xs:element name="ParameterConstants">
+									<xs:annotation>
+										<xs:documentation xml:lang="en">A
+											ParameterConstant defines a type value pair which can be used
+											as a comparison parameter for a logical rule.
+										</xs:documentation>
+									</xs:annotation>
+									<xs:complexType>
+										<xs:sequence maxOccurs="unbounded">
+											<xs:element name="ParameterConstant"
+												type="osdd:tConstantTemplate"/>
+										</xs:sequence>
+									</xs:complexType>
+									<xs:unique name="uniqueParameterConstantId">
+										<xs:selector xpath="./osdd:ParameterConstant"/>
+										<xs:field xpath="@id"/>
+									</xs:unique>
+								</xs:element>
+							</xs:choice>
+							<xs:choice maxOccurs="unbounded">
+								<xs:element name="Choice" type="osdd:tChoiceTemplate"
+									form="qualified">
+									<xs:annotation>
+										<xs:documentation xml:lang="en">A choice let's the
+											application display a selection of choices, among which only
+											one entry may be selected and used as parameter setting.
+										</xs:documentation>
+									</xs:annotation>
+									<xs:unique name="uniqueEntryValueChoice">
+										<xs:selector xpath="./osdd:Entry"/>
+										<xs:field xpath="@Value"/>
+									</xs:unique>
+								</xs:element>
+								<xs:element name="Range" type="osdd:tRangeTemplate" form="qualified">
+									<xs:annotation>
+										<xs:documentation xml:lang="en">A range predefines
+											the possible value ranges for a settings entry, beyond the
+											already imposed limit for the data type selected.
+										</xs:documentation>
+									</xs:annotation>
+								</xs:element>
+							</xs:choice>
+						</xs:sequence>
+					</xs:complexType>
+					<xs:unique name="uniqueChoiceRangeName">
+						<xs:selector xpath="./osdd:Choice | ./osdd:Range"/>
+						<xs:field xpath="@id"/>
+					</xs:unique>
+				</xs:element>
+				<xs:element name="ModuleSettings" form="qualified" minOccurs="0">
+					<xs:annotation>
+						<xs:documentation xml:lang="en">This section defines
+							module-specific configuration parameters, which can be edited
+							and/or displayed using a safety configuration tool, and which are
+							downloaded into [openSAFETY Object 0x101A].
+						</xs:documentation>
+					</xs:annotation>
+					<xs:complexType>
+						<xs:sequence>
+							<xs:element name="SettingsGroup" maxOccurs="unbounded">
+								<xs:annotation>
+									<xs:documentation xml:lang="en">Each setting has to
+										be defined in a settings group, which will group the entries
+										for display and configuration. This grouping is purely a
+										design-choice, and does not need to reflect the realtime
+										implementation of these settings.
+									</xs:documentation>
+								</xs:annotation>
+								<xs:complexType>
+									<xs:sequence minOccurs="0">
+										<xs:element name="Description" type="osdd:tDescription"
+											minOccurs="0">
+											<xs:annotation>
+												<xs:documentation xml:lang="en">Description for
+													the settings group to be displayed to the user.
+												</xs:documentation>
+											</xs:annotation>
+										</xs:element>
+										<xs:element ref="osdd:ActiveInFunction" minOccurs="0"/>
+										<xs:element name="VendorInfo" type="osdd:tNonEmptyString"
+											minOccurs="0" maxOccurs="unbounded"/>
+										<xs:element name="Setting" type="osdd:tSettingRepetition"
+											minOccurs="0" maxOccurs="unbounded">
+											<xs:annotation>
+												<xs:documentation xml:lang="en">A parameter
+													defines a setting, which the user can either display or
+													change and therefore modify the behaviour of the safety
+													module. It will be transmitted to the module using
+													[openSAFETY object 0x101A].
+												</xs:documentation>
+											</xs:annotation>
+										</xs:element>
+									</xs:sequence>
+									<xs:attributeGroup ref="osdd:attrIDName">
+										<xs:annotation>
+											<xs:documentation xml:lang="en">Name and ID of
+												the settings group.
+											</xs:documentation>
+										</xs:annotation>
+									</xs:attributeGroup>
+									<xs:attribute name="CopyFromChannel" type="osdd:tNonEmptyString"
+										use="optional" default="none">
+										<xs:annotation>
+											<xs:documentation xml:lang="en">Settings can also
+												be defined for a specific channel. In such a case, the
+												settings will be copied from the defined channel, and will
+												also be defined there.
+											</xs:documentation>
+										</xs:annotation>
+									</xs:attribute>
+									<xs:attributeGroup ref="osdd:attrDesignerEditRole"/>
+									<xs:attributeGroup ref="osdd:attrCopyToAllSN"/>
+									<xs:attribute name="Unit" type="xs:string" use="optional"
+										default=" "/>
+								</xs:complexType>
+								<xs:unique name="uniqueSettingId">
+									<xs:selector xpath="./osdd:Setting"/>
+									<xs:field xpath="@id"/>
+								</xs:unique>
+							</xs:element>
+						</xs:sequence>
+					</xs:complexType>
+				</xs:element>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="Conditions">
+		<xs:annotation>
+			<xs:documentation xml:lang="en">Limits define
+				check-limits for a setting which should be checked by the
+				design-tool or a safety compiler in order to guarantee a correct
+				configuration for the parameter set of the module. Conditions define
+				relations to other settings of the same or different channels which
+				must be enforced by the design tool.
+			</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:sequence>
+				<xs:sequence minOccurs="0" maxOccurs="unbounded">
+					<xs:annotation>
+						<xs:documentation xml:lang="en">Groups define value
+							ranges for the limit selection. As groups do not have to be
+							defined by name and can also be defined inline within the limit,
+							the entry is optional.
+						</xs:documentation>
+					</xs:annotation>
+					<xs:element name="Group" type="osdd:tConditionsGroup">
+						<xs:annotation>
+							<xs:documentation xml:lang="en">Defines a group of
+								values used by conditions below to define allowed or disallowed
+								values for settings.
+							</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+				</xs:sequence>
+				<xs:choice>
+					<xs:sequence minOccurs="0" maxOccurs="unbounded">
+						<xs:element name="Validation" minOccurs="0">
+							<xs:annotation>
+								<xs:documentation xml:lang="en">A condition defines
+									a ruleset, that if it is met, an action will be executed.
+								</xs:documentation>
+							</xs:annotation>
+							<xs:complexType>
+								<xs:complexContent>
+									<xs:extension base="osdd:tConditionsValidation"/>
+								</xs:complexContent>
+							</xs:complexType>
+						</xs:element>
+						<xs:element name="Visibility" minOccurs="0">
+							<xs:complexType>
+								<xs:complexContent>
+									<xs:extension base="osdd:tConditionsVisibility"/>
+								</xs:complexContent>
+							</xs:complexType>
+						</xs:element>
+					</xs:sequence>
+				</xs:choice>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="ChannelConfiguration">
+		<xs:annotation>
+			<xs:documentation xml:lang="en">The channel configuration
+				contains the data set for this module, including all information
+				needed only for the setup process, and not the runtime version of
+				the configuration itself.
+			</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="DataTransport" minOccurs="0">
+					<xs:annotation>
+						<xs:documentation xml:lang="en">DataTransport defines
+							the SPDO's used for this Safety Module.
+						</xs:documentation>
+					</xs:annotation>
+					<xs:complexType>
+						<xs:sequence>
+							<xs:element name="SPDOTransport" minOccurs="0" maxOccurs="unbounded">
+								<xs:annotation>
+									<xs:documentation xml:lang="en">Individual transport
+							definition for SPDO transports.
+						</xs:documentation>
+								</xs:annotation>
+								<xs:complexType>
+									<xs:complexContent>
+										<xs:extension base="osdd:tDataTransport">
+											<xs:attribute name="MaxNrMappings"
+												type="xs:nonNegativeInteger" use="required"/>
+											<xs:attribute name="MaxReactionTime"
+												type="xs:positiveInteger" use="required">
+												<xs:annotation>
+												<xs:documentation xml:lang="en">This defines the
+									maximum reaction time needed for this SPDO channel.
+								</xs:documentation>
+												</xs:annotation>
+											</xs:attribute>
+										</xs:extension>
+									</xs:complexContent>
+								</xs:complexType>
+							</xs:element>
+						</xs:sequence>
+					</xs:complexType>
+					<xs:unique name="uniqueSPDOTransportId">
+						<xs:selector xpath="./osdd:SPDOTransport"/>
+						<xs:field xpath="@Name"/>
+					</xs:unique>
+				</xs:element>
+				<xs:element name="ChannelGroup" type="osdd:tChannelGroup" minOccurs="0"
+					maxOccurs="unbounded">
+					<xs:annotation>
+						<xs:documentation xml:lang="en">Defines a group of
+							channels, which have their own description and name. In a tool
+							such as the SafeDesigner, those channels will be grouped
+							together, and displayed as such to the user.
+						</xs:documentation>
+					</xs:annotation>
+					<xs:unique name="uniqueChannelId">
+						<xs:selector xpath="./osdd:Channel"/>
+						<xs:field xpath="@id"/>
+					</xs:unique>
+				</xs:element>
+			</xs:sequence>
+		</xs:complexType>
+		<xs:unique name="uniqueChannelGroupId">
+			<xs:selector xpath="./osdd:ChannelGroup"/>
+			<xs:field xpath="@id"/>
+		</xs:unique>
+		<xs:keyref name="SPDOTransportNameKeyRef" refer="osdd:SPDOTransportNameKey">
+			<xs:selector xpath=".//osdd:SPDOPosition"/>
+			<xs:field xpath="@Name"/>
+		</xs:keyref>
+		<xs:key name="SPDOTransportNameKey">
+			<xs:selector xpath="./osdd:DataTransport/osdd:SPDOTransport"/>
+			<xs:field xpath="@Name"/>
+		</xs:key>
+	</xs:element>
+	<xs:element name="ManufacturerSpecificObjectDictionary">
+		<xs:annotation>
+			<xs:documentation xml:lang="en">Defines manufacturer
+				specific entries for the modules object dictionary.
+			</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:sequence maxOccurs="unbounded">
+				<xs:element name="Object">
+					<xs:complexType>
+						<xs:simpleContent>
+							<xs:extension base="osdd:tNonEmptyString">
+								<xs:attribute name="Index" type="osdd:hUINT16" use="required"/>
+								<xs:attribute name="SubIndex" type="osdd:hUINT8" use="optional"/>
+								<xs:attribute name="Datatype" type="osdd:tOSDDValueTypes"
+									use="optional"/>
+							</xs:extension>
+						</xs:simpleContent>
+					</xs:complexType>
+				</xs:element>
+			</xs:sequence>
+		</xs:complexType>
+		<xs:unique name="uniqueIndex">
+			<xs:selector xpath="./osdd:Object"/>
+			<xs:field xpath="@Index"/>
+			<xs:field xpath="@SubIndex"/>
+		</xs:unique>
+	</xs:element>
+	<xs:element name="ModuleFunctions">
+		<xs:annotation>
+			<xs:documentation xml:lang="en">Lists all functions
+				available for the module.
+			</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="Function" maxOccurs="unbounded">
+					<xs:complexType>
+						<xs:complexContent>
+							<xs:extension base="osdd:tFunction">
+								<xs:sequence>
+									<xs:element name="Function" type="osdd:tFunction" minOccurs="0"
+										maxOccurs="unbounded"/>
+								</xs:sequence>
+							</xs:extension>
+						</xs:complexContent>
+					</xs:complexType>
+				</xs:element>
+			</xs:sequence>
+			<xs:attribute name="ListCRC32" type="osdd:hCRC32" use="optional"/>
+		</xs:complexType>
+		<xs:unique name="uniqueFunctionId">
+			<xs:selector xpath="./osdd:Function"/>
+			<xs:field xpath="@id"/>
+		</xs:unique>
+	</xs:element>
+	<xs:complexType name="tGeneratorDescription">
+		<xs:annotation>
+			<xs:documentation>Tool which generated this topology</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="Info" type="osdd:tGeneratorInfo" minOccurs="0" maxOccurs="unbounded"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="tNodeDescription">
+		<xs:annotation>
+			<xs:documentation>Tool which generated this topology</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="Classification" minOccurs="0" maxOccurs="unbounded">
+				<xs:complexType>
+					<xs:complexContent>
+						<xs:extension base="osdd:tClassification"/>
+					</xs:complexContent>
+				</xs:complexType>
+			</xs:element>
+			<xs:element name="Info" type="osdd:tGeneratorInfo" minOccurs="0" maxOccurs="unbounded"/>
+			<xs:element name="ModuleFunctions" type="osdd:tFunctionModels" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="tGeneratorInfo">
+		<xs:annotation>
+			<xs:documentation xml:lang="en">Vendor specific elements, which may be parsed by an underlying design tool
+			</xs:documentation>
+		</xs:annotation>
+		<xs:attribute name="Name" type="osdd:tNonEmptyString" use="required">
+			<xs:annotation>
+				<xs:documentation>Name for the generator info field</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="Value" type="osdd:tNonEmptyString" use="required">
+			<xs:annotation>
+				<xs:documentation>Value for the generator info field
+</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="Type" type="osdd:tOSDDValueTypes">
+			<xs:annotation>
+				<xs:documentation>Datatype for the info field. Only openSAFETY datatypes are allowed, to allow for better error managment and parsing of data values</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+	</xs:complexType>
+	<xs:complexType name="tFunction">
+		<xs:annotation>
+			<xs:documentation xml:lang="en">Defines a certain
+				operation subset for the module to enable a modular function model.
+			</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="Description" type="osdd:tDescription" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation xml:lang="en">Description for
+						the
+						function to be displayed to the user.
+					</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+		<xs:attributeGroup ref="osdd:attrIDName"/>
+		<xs:attribute name="ModelCRC32" type="osdd:hCRC32" use="optional"/>
+	</xs:complexType>
+	<xs:complexType name="tClassification">
+		<xs:annotation>
+			<xs:documentation xml:lang="en">Defines the classification of a module in the OSDD topology.
+			</xs:documentation>
+		</xs:annotation>
+		<xs:simpleContent>
+			<xs:extension base="xs:string">
+				<xs:attribute name="Type" type="osdd:hClassificationType"/>
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
+	<xs:complexType name="tChannel">
+		<xs:annotation>
+			<xs:documentation xml:lang="en">Defines a channel for the
+				module.
+			</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="Description" type="osdd:tDescription" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation xml:lang="en">This should describe
+						the channel. The description can be displayed in a design-tool.
+					</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element ref="osdd:ActiveInFunction" minOccurs="0"/>
+			<xs:element name="DataValue" type="osdd:tDataValue"/>
+			<xs:element name="Conditions" minOccurs="0">
+				<xs:complexType>
+					<xs:sequence>
+						<xs:element name="Visibility">
+							<xs:complexType>
+								<xs:complexContent>
+									<xs:extension base="osdd:tConditionsVisibility"/>
+								</xs:complexContent>
+							</xs:complexType>
+						</xs:element>
+					</xs:sequence>
+				</xs:complexType>
+			</xs:element>
+			<xs:element name="Repetition" type="osdd:tDataRepetition" minOccurs="0" maxOccurs="1">
+				<xs:annotation>
+					<xs:documentation>Allows for a repetetive definition of the channel
+						information. May only be used for non-safe topology defined
+						channels.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="ChannelSettings" minOccurs="0">
+				<xs:complexType>
+					<xs:sequence>
+						<xs:element name="Setting" type="osdd:tSetting" minOccurs="0"
+							maxOccurs="unbounded"/>
+					</xs:sequence>
+				</xs:complexType>
+				<xs:unique name="uniqueSettingInGroupId">
+					<xs:selector xpath="./osdd:Setting"/>
+					<xs:field xpath="@id"/>
+				</xs:unique>
+			</xs:element>
+			<xs:element name="VendorInfo" type="osdd:tNonEmptyString" minOccurs="0"
+				maxOccurs="unbounded"/>
+			<xs:element name="ProfileInfo" minOccurs="0" maxOccurs="unbounded"
+				type="osdd:tProfileInfo"> </xs:element>
+			<xs:element ref="osdd:RelationWith" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attributeGroup ref="osdd:attrIDName"/>
+		<xs:attributeGroup ref="osdd:attrIsSafeAttribute"/>
+		<xs:attribute name="disabled" type="xs:boolean" default="false"/>
+		<xs:attribute name="displayWithProfile" type="xs:boolean" use="optional" default="true"/>
+	</xs:complexType>
+	<xs:complexType name="tChoiceTemplate">
+		<xs:complexContent>
+			<xs:extension base="osdd:tParameterTemplate">
+				<xs:sequence>
+					<xs:element name="Entry" minOccurs="2" maxOccurs="unbounded">
+						<xs:annotation>
+							<xs:documentation xml:lang="en">An entry defines one
+								of the possible elements for the user to select from.
+							</xs:documentation>
+						</xs:annotation>
+						<xs:complexType>
+							<xs:attribute name="Value" type="osdd:tNonEmptyString" use="required">
+								<xs:annotation>
+									<xs:documentation xml:lang="en">The actual value
+										which will be send to the module.
+									</xs:documentation>
+								</xs:annotation>
+							</xs:attribute>
+							<xs:attribute name="Display" type="osdd:tNonEmptyString">
+								<xs:annotation>
+									<xs:documentation xml:lang="en">The value which
+										will be displayed in the hardware configuration instead of
+										@Value.
+									</xs:documentation>
+								</xs:annotation>
+							</xs:attribute>
+						</xs:complexType>
+					</xs:element>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="tConditionLogical">
+		<xs:annotation>
+			<xs:documentation xml:lang="en">Performs a logical
+				combination of enclosed conditions.
+			</xs:documentation>
+		</xs:annotation>
+		<xs:choice maxOccurs="unbounded">
+			<xs:group ref="osdd:tConditionsRulesComparison"/>
+			<xs:group ref="osdd:tConditionsRulesLogical"/>
+		</xs:choice>
+	</xs:complexType>
+	<xs:complexType name="tConditionsGroup">
+		<xs:annotation>
+			<xs:documentation xml:lang="en">Limit groups define value
+				possibilities to be referenced by limit checks.
+			</xs:documentation>
+		</xs:annotation>
+		<xs:sequence minOccurs="0">
+			<xs:element name="Item" type="osdd:tNonEmptyString" maxOccurs="unbounded">
+				<xs:annotation>
+					<xs:documentation xml:lang="en">An item as part of a
+						possible value group for limit definitions.
+					</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+		<xs:attribute name="Name" type="osdd:tNonEmptyString">
+			<xs:annotation>
+				<xs:documentation xml:lang="en">The name for the group.
+				</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="Ref" type="osdd:tNonEmptyString">
+			<xs:annotation>
+				<xs:documentation xml:lang="en">References a group. This
+					is only possible if group is used as a child for the IN Condition.
+				</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+	</xs:complexType>
+	<xs:complexType name="tConditionsParameter">
+		<xs:simpleContent>
+			<xs:extension base="osdd:tNonEmptyString">
+				<xs:attribute name="SettingsGroup" type="xs:string">
+					<xs:annotation>
+						<xs:documentation xml:lang="en">A reference to the
+							settings group, in which the parameter is defined. The group has
+							to be defined in the ModuleSettings element. If the element is
+							nil the group is the same as the group for the parameter the
+							limit gets defined for.
+						</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
+	<xs:complexType name="tConditionsValidation">
+		<xs:sequence>
+			<xs:group ref="osdd:tConditionsValidationOptions"/>
+			<xs:element name="Action">
+				<xs:annotation>
+					<xs:documentation xml:lang="en">The action which has to
+						be executed, if the condition is met.
+					</xs:documentation>
+				</xs:annotation>
+				<xs:complexType>
+					<xs:choice>
+						<xs:element name="IgnoreValue" type="osdd:hTrueFalse">
+							<xs:annotation>
+								<xs:documentation xml:lang="en">
+									Ignore the setting, if this action is true. This means, a design-tool
+									should handle this setting, as if it was not present. Default-value handling
+									is a decision of the module itself and must not be handled by the design-tool
+								</xs:documentation>
+							</xs:annotation>
+						</xs:element>
+						<xs:element name="ForceValue" type="osdd:tNonEmptyString">
+							<xs:annotation>
+								<xs:documentation xml:lang="en">If the condition is
+									met, the value of the parameter must be set to this value,
+									otherwise an error has to be presented to the user.
+								</xs:documentation>
+							</xs:annotation>
+						</xs:element>
+						<xs:element name="Error" type="osdd:tNonEmptyString">
+							<xs:annotation>
+								<xs:documentation xml:lang="en">If this element is
+									empty, a simple error is displayed. Otherwise depending on the
+									lang attribute an error message is displayed. If there is no
+									error message available for the language used by the user,
+									either the default message for English can be displayed or a
+									generic message.
+								</xs:documentation>
+							</xs:annotation>
+						</xs:element>
+						<xs:element name="Warning" type="osdd:tNonEmptyString">
+							<xs:annotation>
+								<xs:documentation xml:lang="en">If this element is
+									empty, a simple warning is displayed. Otherwise depending on
+									the @lang attribute an warning message is displayed. If there
+									is
+									no warning message available for the language used by the
+									user,
+									either the default message for English can be displayed or
+									a
+									generic message.
+								</xs:documentation>
+							</xs:annotation>
+						</xs:element>
+						<xs:element name="Info" type="osdd:tNonEmptyString">
+							<xs:annotation>
+								<xs:documentation xml:lang="en">If this element is
+									empty, a simple information is displayed. Otherwise depending
+									on the @lang attribute an information message is displayed. If
+									there is no warning message available for the language used by
+									the user, either the default message for English can be
+									displayed or a generic message.
+								</xs:documentation>
+							</xs:annotation>
+						</xs:element>
+					</xs:choice>
+				</xs:complexType>
+			</xs:element>
+		</xs:sequence>
+		<xs:attribute name="Name" type="osdd:tNonEmptyString" use="required">
+			<xs:annotation>
+				<xs:documentation xml:lang="en">The name for the
+					condition. This entry will be used, if the error / warning / info
+					action below does not define a error text. The name will result in
+					an error like : "Error: #Name"
+				</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+	</xs:complexType>
+	<xs:complexType name="tConditionsValidationComparison">
+		<xs:choice>
+			<xs:sequence maxOccurs="2">
+				<xs:choice>
+					<xs:element name="Parameter" type="osdd:tConditionsParameter"/>
+					<xs:element name="Value" type="xs:string"/>
+				</xs:choice>
+			</xs:sequence>
+		</xs:choice>
+	</xs:complexType>
+	<xs:complexType name="tWithConditionsValidationComparison">
+		<xs:choice>
+			<xs:sequence maxOccurs="2">
+				<xs:choice>
+					<xs:element name="Parameter" type="osdd:tConditionsParameter"/>
+					<xs:element name="Value" type="osdd:tNonEmptyString"/>
+				</xs:choice>
+			</xs:sequence>
+		</xs:choice>
+		<xs:attribute name="ifValue" type="osdd:tNonEmptyString" use="required"/>
+	</xs:complexType>
+	<xs:complexType name="tConditionsVisibility">
+		<xs:sequence>
+			<xs:group ref="osdd:tConditionsValidationOptions"/>
+			<xs:element name="Action">
+				<xs:annotation>
+					<xs:documentation xml:lang="en">The action which has to
+						be executed, if the condition is met.
+					</xs:documentation>
+				</xs:annotation>
+				<xs:complexType>
+					<xs:sequence maxOccurs="unbounded">
+						<xs:choice>
+							<xs:element name="Enable">
+								<xs:annotation>
+									<xs:documentation>Enables this channel, if the conditions are met</xs:documentation>
+								</xs:annotation>
+							</xs:element>
+							<xs:element name="Disable">
+								<xs:annotation>
+									<xs:documentation>Disables the channel, if the conditions are met</xs:documentation>
+								</xs:annotation>
+							</xs:element>
+						</xs:choice>
+					</xs:sequence>
+				</xs:complexType>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="tConstantTemplate">
+		<xs:annotation>
+			<xs:documentation xml:lang="en">A ParameterConstant
+				defines a type value pair which can be used as a comparison
+				parameter for a logical rule.
+			</xs:documentation>
+		</xs:annotation>
+		<xs:attributeGroup ref="osdd:attrParameterConstant"/>
+		<xs:attributeGroup ref="osdd:attrIDName"/>
+	</xs:complexType>
+	<xs:complexType name="tDataRepetition">
+		<xs:annotation>
+			<xs:documentation xml:lang="en">Definition for a sequence
+				of data entries, where the current channel entry will be duplicated
+				by the number of entries present.
+			</xs:documentation>
+		</xs:annotation>
+		<xs:attributeGroup ref="osdd:attrDataRepetition"/>
+	</xs:complexType>
+	<xs:complexType name="tDataSequence">
+		<xs:annotation>
+			<xs:documentation xml:lang="en">Definition for a sequence
+				of data entries, where the current channel entry will be duplicated
+				by the number of entries present.
+			</xs:documentation>
+		</xs:annotation>
+		<xs:attribute name="RangeMin" type="xs:nonNegativeInteger" use="required">
+			<xs:annotation>
+				<xs:documentation xml:lang="en">Minimum value for range.
+				</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="RangeMax" type="xs:positiveInteger" use="required">
+			<xs:annotation>
+				<xs:documentation xml:lang="en">Maximum value for range.
+				</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+	</xs:complexType>
+	<xs:complexType name="tDataTransport">
+		<xs:sequence>
+			<xs:element name="DataAlignment">
+				<xs:annotation>
+					<xs:documentation xml:lang="en">
+						This element describes the data alignment and the resulting overall size of the transport. The following alignments are supported:
+						ByteSize - All 16bit values must start on byte offsets dividable by 2, all 32bit on offsets dividable by 4, all 64bit offsets dividable by 8.
+						2Byte - All values must start on offsets dividable by 2.
+						4Byte - All values must start on offsets dividable by 4.
+					</xs:documentation>
+				</xs:annotation>
+				<xs:complexType>
+					<xs:attribute name="Type" type="osdd:tDataAlignment" use="required"/>
+					<xs:attribute name="Value" type="xs:positiveInteger" use="required"/>
+				</xs:complexType>
+			</xs:element>
+		</xs:sequence>
+		<xs:attribute name="Name" type="osdd:tNonEmptyString" use="required">
+			<xs:annotation>
+				<xs:documentation xml:lang="en">Name used by the
+						SPDOPosition element to reference this SPDO transport.
+					</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="Direction" type="osdd:tDataDirection" use="required">
+			<xs:annotation>
+				<xs:documentation xml:lang="en">Direction in which
+						this transport is implemented. Input direction means this
+						transport delivers information from the module to a safety
+						controller, output direction defines channels transported to the
+						safety module.
+					</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="OctetSize" type="xs:positiveInteger" use="required">
+			<xs:annotation>
+				<xs:documentation xml:lang="en">Octet size for this
+						SPDO. It is used to define the total size of the openSAFETY
+						frame for transport definitions.
+					</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+	</xs:complexType>
+	<xs:complexType name="tDataValue">
+		<xs:all>
+			<xs:element name="Transport" type="osdd:tTransportPosition" form="qualified"
+				minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Definition of the channel inside the SPDO or grey cyclic container</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="SODPosition" type="osdd:tSODPosition" form="qualified" minOccurs="0"/>
+			<xs:element name="ConnectionValidation" nillable="true" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation xml:lang="en">Connection valid
+						classifies a channel which only presents the information if the
+						safety controller accepts the module as being operable. It has to
+						be implemented by the safety firmware of the module or controller
+						and is here simply for information purposes.
+					</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:all>
+		<xs:attribute name="Type" type="osdd:tOSDDValueTypes" use="required"/>
+		<xs:attribute name="NrOfOctets" type="xs:positiveInteger" use="optional"/>
+	</xs:complexType>
+	<xs:complexType name="tDescription">
+		<xs:annotation>
+			<xs:documentation xml:lang="en">Definition for a global
+				description element.
+			</xs:documentation>
+		</xs:annotation>
+		<xs:simpleContent>
+			<xs:extension base="xs:string"/>
+		</xs:simpleContent>
+	</xs:complexType>
+	<xs:complexType name="tDeviceDescription">
+		<xs:annotation>
+			<xs:documentation xml:lang="en">OSDD definition for this element</xs:documentation>
+		</xs:annotation>
+		<xs:simpleContent>
+			<xs:extension base="xs:string">
+				<xs:attribute name="minOpenSafetyRelease" type="osdd:topenSafetyRelease"
+					default="1.5">
+					<xs:annotation>
+						<xs:documentation xml:lang="en">Minimum safety release (openSAFETY) needed to operate this instance within this network.</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+				<xs:attribute name="Module" type="osdd:tNonEmptyString">
+					<xs:annotation>
+						<xs:documentation>Defines the name of the module inside the OSDD, which should be considered as module for this entry</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
+	<xs:complexType name="tDeviceRevision">
+		<xs:annotation>
+			<xs:documentation xml:lang="en">Development revision for
+				this device
+			</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="Date" type="xs:dateTime">
+				<xs:annotation>
+					<xs:documentation xml:lang="en">The date the OSDD file
+						was changed the last time. An external generator should check,
+						that this date does not differ from the filedate.
+					</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="Number" type="osdd:hVersion">
+				<xs:annotation>
+					<xs:documentation xml:lang="en">Minimum Firmware
+						Revision this OSDD is valid for. Revision numbering has to be
+						handled using a major revision number, which changes whenever the
+						functionality of the safety device changes significantly, and a
+						minor revision number, which updates with only minor changes.
+						[openSAFETY Object 0x1018 - 0x03]
+					</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="tParameterTemplate">
+		<xs:attribute name="id" type="osdd:tNonEmptyString" use="required">
+			<xs:annotation>
+				<xs:documentation xml:lang="en">The id for the
+					parameter template, as it will be used throughout this OSDD
+					document.
+				</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="Type" type="osdd:tOSDDValueTypes" use="required">
+			<xs:annotation>
+				<xs:documentation xml:lang="en">Every parameter template
+					will have to define a base type, representing the data type for the
+					resulting value entry.
+				</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="Unit" type="xs:string" use="optional" default=" ">
+			<xs:annotation>
+				<xs:documentation xml:lang="en">Unit is simply meant to
+					be displayed to the end-user, to explain the range of the data
+					entries.
+				</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+	</xs:complexType>
+	<xs:complexType name="tRangeTemplate">
+		<xs:complexContent>
+			<xs:extension base="osdd:tParameterTemplate">
+				<xs:sequence>
+					<xs:element name="RangeDefinition">
+						<xs:annotation>
+							<xs:documentation xml:lang="en">The datatype
+								definition for this range.
+							</xs:documentation>
+						</xs:annotation>
+						<xs:complexType>
+							<xs:complexContent>
+								<xs:extension base="osdd:tDataSequence">
+									<xs:attribute name="StepSize" type="xs:positiveInteger"
+										default="1">
+										<xs:annotation>
+											<xs:documentation xml:lang="en">The size of the
+												step, with which the application iterates through the
+												possible range. e.g. if RangeMin is 0 and StepSize is 2,
+												only positive integers are possible for selection.
+											</xs:documentation>
+										</xs:annotation>
+									</xs:attribute>
+								</xs:extension>
+							</xs:complexContent>
+						</xs:complexType>
+					</xs:element>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="tSafetyDevice">
+		<xs:annotation>
+			<xs:documentation>SN instances communicating within this SD instance</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="DeviceDescription" type="osdd:tDeviceDescription" minOccurs="0"/>
+			<xs:element name="NodeDescription" type="osdd:tNodeDescription" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="tSafetyNode">
+		<xs:annotation>
+			<xs:documentation>SN instances communicating within this SD instance</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="osdd:tSafetyDevice">
+				<xs:sequence>
+					<xs:element ref="osdd:DesignConfiguration" minOccurs="0"/>
+					<xs:element name="ChannelConfiguration" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation xml:lang="en">The channel configuration
+								contains the data set for this module, including all information
+								needed only for the setup process, and not the runtime version of
+								the configuration itself.
+							</xs:documentation>
+						</xs:annotation>
+						<xs:complexType>
+							<xs:sequence>
+								<xs:element name="DataTransport" minOccurs="0">
+									<xs:annotation>
+										<xs:documentation xml:lang="en">DataTransport defines
+											the SPDO's used for this Safety Module.
+										</xs:documentation>
+									</xs:annotation>
+									<xs:complexType>
+										<xs:sequence>
+											<xs:element name="GenericTransport"
+												maxOccurs="unbounded">
+												<xs:annotation>
+												<xs:documentation>Individual transport definition for non-safe data
+														transports. Only allowed as part of a topology definition, and not
+														inside a modules OSDD definition</xs:documentation>
+												</xs:annotation>
+												<xs:complexType>
+												<xs:complexContent>
+												<xs:extension base="osdd:tDataTransport">
+												<xs:attributeGroup ref="osdd:attrIsSafeAttribute"
+												/>
+												</xs:extension>
+												</xs:complexContent>
+												</xs:complexType>
+											</xs:element>
+										</xs:sequence>
+									</xs:complexType>
+									<xs:unique name="uniqueGenericTransportId">
+										<xs:selector xpath="./osdd:GenericTransport"/>
+										<xs:field xpath="@Name"/>
+									</xs:unique>
+								</xs:element>
+								<xs:element name="ChannelGroup" type="osdd:tChannelGroup"
+									maxOccurs="unbounded">
+									<xs:annotation>
+										<xs:documentation xml:lang="en">Defines a group of
+											channels, which have their own description and name. In a tool
+											such as the SafeDesigner, those channels will be grouped
+											together, and displayed as such to the user.
+										</xs:documentation>
+									</xs:annotation>
+									<xs:unique name="uniqueSNChannelId">
+										<xs:selector xpath="./osdd:Channel"/>
+										<xs:field xpath="@id"/>
+									</xs:unique>
+								</xs:element>
+							</xs:sequence>
+						</xs:complexType>
+						<xs:unique name="uniqueSNChannelGroupId">
+							<xs:selector xpath="./osdd:ChannelGroup"/>
+							<xs:field xpath="@id"/>
+						</xs:unique>
+					</xs:element>
+				</xs:sequence>
+				<xs:attribute name="SAddr" type="xs:positiveInteger" use="required">
+					<xs:annotation>
+						<xs:documentation xml:lang="en">SAddr for this device within the SD network. This must be unique</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+				<xs:attribute name="GoesOperational" type="xs:boolean" default="true">
+					<xs:annotation>
+						<xs:documentation xml:lang="en">Definition, if this instance will participate in safe cyclic data exchange or not.</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+				<xs:attribute name="Disabled" type="xs:boolean" use="optional" default="false">
+					<xs:annotation>
+						<xs:documentation xml:lang="en">Defines whether this instance is enabled within the topology or not. It is not allowed to be true if the SCM instance uses the SAddr as TransportSAddr</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="tSafetyConfigurationManager">
+		<xs:annotation>
+			<xs:documentation>SCM instance for a single SD domain</xs:documentation>
+		</xs:annotation>
+		<xs:complexContent>
+			<xs:extension base="osdd:tSafetyDevice">
+				<xs:attribute name="TransportSAddr" use="required">
+					<xs:annotation>
+						<xs:documentation xml:lang="en">Defines the saddr which is used to communicate with this scm instance</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+				<xs:attribute name="MaxSAddr">
+					<xs:annotation>
+						<xs:documentation xml:lang="en">Defines the maximum number of saddr this SCM instance may handle</xs:documentation>
+					</xs:annotation>
+				</xs:attribute>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="tSetting">
+		<xs:sequence>
+			<xs:element name="Description" type="osdd:tDescription" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation xml:lang="en">The description for a
+						setting can be displayed by a design-tool in order to allow a more
+						intuitive handling of the settings.
+					</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="DataSelection" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation xml:lang="en">Data value selection
+						for this parameter. This can either be a value template, or a
+						range of a given integer datatype.
+					</xs:documentation>
+				</xs:annotation>
+				<xs:complexType>
+					<xs:attribute name="Template" type="osdd:tNonEmptyString" use="optional">
+						<xs:annotation>
+							<xs:documentation xml:lang="en">A reference name for
+								a SettingsDataTemplate to minimize the possible values for this
+								setting.
+							</xs:documentation>
+						</xs:annotation>
+					</xs:attribute>
+					<xs:attribute name="Default" type="osdd:tNonEmptyString" use="required">
+						<xs:annotation>
+							<xs:documentation xml:lang="en">A default value for
+								the setting. If @Template is used, the default value must be a
+								valid entry for such a template.
+							</xs:documentation>
+						</xs:annotation>
+					</xs:attribute>
+					<xs:attribute name="Type" type="osdd:tOSDDValueTypes" use="required">
+						<xs:annotation>
+							<xs:documentation xml:lang="en">Type defines the
+								value datatype. It can be omitted if @Template is used, as in
+								such a case the datatype is derived from @Template.
+							</xs:documentation>
+						</xs:annotation>
+					</xs:attribute>
+					<xs:attribute name="RangeMin" type="osdd:tNonEmptyString" use="required">
+						<xs:annotation>
+							<xs:documentation xml:lang="en">Defines the minimum
+								value within @Type for the entry. Only valid if @Template is
+								empty.
+							</xs:documentation>
+						</xs:annotation>
+					</xs:attribute>
+					<xs:attribute name="RangeMax" type="osdd:tNonEmptyString" use="required">
+						<xs:annotation>
+							<xs:documentation xml:lang="en">Defines the maximum
+								value within @Type for the entry. Only valid if @Template is
+								empty.
+							</xs:documentation>
+						</xs:annotation>
+					</xs:attribute>
+					<xs:attribute name="RangeStep" type="osdd:tNonEmptyString" use="optional"
+						default="1">
+						<xs:annotation>
+							<xs:documentation xml:lang="en">Defines the minimum
+								value within @Type for the entry. Only valid if @Template is
+								empty.
+							</xs:documentation>
+						</xs:annotation>
+					</xs:attribute>
+					<xs:attribute name="UnitScale" type="xs:string" use="optional" default=" ">
+						<xs:annotation>
+							<xs:documentation xml:lang="en">Defines a string
+								which represents the unit or scale of the setting to the user.
+							</xs:documentation>
+						</xs:annotation>
+					</xs:attribute>
+				</xs:complexType>
+			</xs:element>
+			<xs:choice>
+				<xs:element name="ParameterStream" minOccurs="0">
+					<xs:complexType>
+						<xs:attribute name="Position" type="xs:positiveInteger">
+							<xs:annotation>
+								<xs:documentation>Defines a position for the setting within the parameter stream.</xs:documentation>
+							</xs:annotation>
+						</xs:attribute>
+					</xs:complexType>
+				</xs:element>
+				<xs:element name="SODPosition" minOccurs="0">
+					<xs:annotation>
+						<xs:documentation>Defines the object position of the setting in the SafeOD.</xs:documentation>
+					</xs:annotation>
+					<xs:complexType>
+						<xs:complexContent>
+							<xs:extension base="osdd:tSODPosition">
+								<xs:attribute name="IsCRCSecured" type="xs:boolean" default="true">
+									<xs:annotation>
+										<xs:documentation>Defines if the parameter has to be secured by the parameter crc mechanism, or not.</xs:documentation>
+									</xs:annotation>
+								</xs:attribute>
+							</xs:extension>
+						</xs:complexContent>
+					</xs:complexType>
+				</xs:element>
+			</xs:choice>
+			<xs:element name="VendorInfo" type="osdd:tNonEmptyString" minOccurs="0"
+				maxOccurs="unbounded">
+				<xs:annotation>
+					<xs:documentation xml:lang="en">Defines additional vendor specific information.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element ref="osdd:Conditions" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attributeGroup ref="osdd:attrIDName"/>
+		<xs:attribute name="Type" type="osdd:tOSDDValueTypes"/>
+		<xs:attribute name="Value" type="osdd:tNonEmptyString"/>
+		<xs:attribute name="Template" type="osdd:tNonEmptyString"/>
+		<xs:attributeGroup ref="osdd:attrDesignerVisibility"/>
+		<xs:attributeGroup ref="osdd:attrDesignerEditRole"/>
+	</xs:complexType>
+	<xs:complexType name="tSettingRepetition">
+		<xs:complexContent>
+			<xs:extension base="osdd:tSetting">
+				<xs:sequence>
+					<xs:element name="Repetition" type="osdd:tDataRepetition" minOccurs="0"
+						maxOccurs="1">
+						<xs:annotation>
+							<xs:documentation>Allows for a repetetive definition of the setting
+								information. May only be used for non-safe topology defined
+								settings.</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="tSODPosition">
+		<xs:annotation>
+			<xs:documentation xml:lang="en">Defines the entries for
+				the mapping parameter 0x1400 (RxSPDO) and 0xC000 (TxSPDO).
+			</xs:documentation>
+		</xs:annotation>
+		<xs:attribute name="Index" type="osdd:hUINT16" use="required"/>
+		<xs:attribute name="SubIndex" type="osdd:hUINT8" use="required"/>
+	</xs:complexType>
+	<xs:complexType name="tTransportPosition">
+		<xs:attribute name="Name" type="osdd:tNonEmptyString" use="required"/>
+		<xs:attribute name="Index" type="osdd:hUINT8" use="required"/>
+		<xs:attribute name="BitMask" type="osdd:hBitMask" use="optional" default="0x01"/>
+	</xs:complexType>
+	<xs:simpleType name="tAndOr">
+		<xs:annotation>
+			<xs:documentation xml:lang="en">A type specifying a the
+				logical relation of checks inside a with clause.
+			</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="And"/>
+			<xs:enumeration value="Or"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="hBitMask">
+		<xs:annotation>
+			<xs:documentation xml:lang="en">This defines the possible
+				values for a bitmask. As bitmasks defined in an OSDD always specify
+				just a single bit, a combination of bitmask entries is not possible.
+			</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="osdd:hUINT">
+			<xs:enumeration value="0x01"/>
+			<xs:enumeration value="0x02"/>
+			<xs:enumeration value="0x04"/>
+			<xs:enumeration value="0x08"/>
+			<xs:enumeration value="0x10"/>
+			<xs:enumeration value="0x20"/>
+			<xs:enumeration value="0x40"/>
+			<xs:enumeration value="0x80"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="hClassificationType">
+		<xs:annotation>
+			<xs:documentation xml:lang="en">A type specifying a
+				default value enumeration for the Classification Type attribute within the
+				OSDD Topology.
+			</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="Analog"/>
+			<xs:enumeration value="Counter"/>
+			<xs:enumeration value="Digital"/>
+			<xs:enumeration value="Input"/>
+			<xs:enumeration value="Output"/>
+			<xs:enumeration value="PLC"/>
+			<xs:enumeration value="Power"/>
+			<xs:enumeration value="Temperature"/>
+			<xs:enumeration value="Motion"/>
+			<xs:enumeration value="Positioning"/>
+			<xs:enumeration value="VendorSpecific"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="hCRC32">
+		<xs:annotation>
+			<xs:documentation xml:lang="en">A CRC32 checksum based on
+				the CRC32 polynomial defined by the openSAFETY protocol
+				specification.
+			</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="osdd:hUINT">
+			<xs:length value="10"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="hQuartzTolerance">
+		<xs:annotation>
+			<xs:documentation xml:lang="en">A type specifying a
+				default value enumeration for the QuartzTolerance element within the
+				OSDD TimeConfiguration.
+			</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="25ppm"/>
+			<xs:enumeration value="50ppm"/>
+			<xs:enumeration value="100ppm"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="hTrueFalse">
+		<xs:annotation>
+			<xs:documentation xml:lang="en">A type specifying a True
+				/ False enumeration for the isSafe attribute for an OSDD Channel.
+			</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="true"/>
+			<xs:enumeration value="false"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="hUINT">
+		<xs:annotation>
+			<xs:documentation xml:lang="en">Datatype representing an
+				unsigned integer value using hex representation. Values start with
+				'0x'.
+			</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:string">
+			<xs:pattern value="0x[0-9a-fA-F]+"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="hUINT16">
+		<xs:annotation>
+			<xs:documentation xml:lang="en">Datatype representing a
+				2-byte unsigned integer value using hex representation. Values start
+				with '0x'.
+			</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="osdd:hUINT">
+			<xs:length value="6"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="hUINT32">
+		<xs:annotation>
+			<xs:documentation xml:lang="en">Datatype representing a
+				4-byte unsigned integer value using hex representation. Values start
+				with '0x'.
+			</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="osdd:hUINT">
+			<xs:length value="10"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="hUINT8">
+		<xs:annotation>
+			<xs:documentation xml:lang="en">Datatype representing a
+				1-byte unsigned integer value using hex representation. Values start
+				with '0x'.
+			</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="osdd:hUINT">
+			<xs:maxLength value="4"/>
+			<xs:minLength value="3"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="hVersion">
+		<xs:annotation>
+			<xs:documentation xml:lang="en">Version attributes all
+				require the same identification, meaning a major-minor scheme. This
+				is represented using this attribute group.
+			</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:token">
+			<xs:minLength value="3"/>
+			<xs:pattern value="([0-9]*)(.([0-9]*))*"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="tDataDirection">
+		<xs:annotation>
+			<xs:documentation xml:lang="en">Defines data direction
+				for communication channels.
+			</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="Input"/>
+			<xs:enumeration value="Output"/>
+			<xs:enumeration value="Both"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="topenSafetyRelease">
+		<xs:annotation>
+			<xs:documentation xml:lang="en">This type defines the
+				possible firmware releases for the openSAFETY stack distribution,
+				for which the accompanying OSDD can be used. If this OSDD does not
+				use any specific possibilities, the keyword any can be used to match
+				any firmware release.
+			</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="any"/>
+			<xs:enumeration value="1.3"/>
+			<xs:enumeration value="1.4"/>
+			<xs:enumeration value="1.5"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="tOSDDValueTypes">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="Int8"/>
+			<xs:enumeration value="Int16"/>
+			<xs:enumeration value="Int24"/>
+			<xs:enumeration value="Int32"/>
+			<xs:enumeration value="Int40"/>
+			<xs:enumeration value="Int48"/>
+			<xs:enumeration value="Int56"/>
+			<xs:enumeration value="Int64"/>
+			<xs:enumeration value="UInt8"/>
+			<xs:enumeration value="UInt16"/>
+			<xs:enumeration value="UInt24"/>
+			<xs:enumeration value="UInt32"/>
+			<xs:enumeration value="UInt40"/>
+			<xs:enumeration value="UInt48"/>
+			<xs:enumeration value="UInt56"/>
+			<xs:enumeration value="UInt64"/>
+			<xs:enumeration value="Float32"/>
+			<xs:enumeration value="Float64"/>
+			<xs:enumeration value="Boolean"/>
+			<xs:enumeration value="Void"/>
+			<xs:enumeration value="Domain"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="tDataAlignment">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="ByteSize"/>
+			<xs:enumeration value="2Byte"/>
+			<xs:enumeration value="4Byte"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="tNonEmptyString">
+		<xs:restriction base="xs:string">
+			<xs:pattern value="\S+[\S\s]*"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:group name="tConditionsRulesComparison">
+		<xs:choice>
+			<xs:element name="GreaterThan" type="osdd:tConditionsValidationComparison"/>
+			<xs:element name="GreaterEqual" type="osdd:tConditionsValidationComparison"/>
+			<xs:element name="LessThan" type="osdd:tConditionsValidationComparison"/>
+			<xs:element name="LessEqual" type="osdd:tConditionsValidationComparison"/>
+			<xs:element name="Equal" type="osdd:tConditionsValidationComparison"/>
+			<xs:element name="IsUsed" nillable="true">
+				<xs:annotation>
+					<xs:documentation xml:lang="en">The IsUsed represents
+						whether a Channel in a certain ChannelGroup is used within a
+						design tool. If the enclosing Setting is part of a ChannelSettings
+						element the IsUsed element can be used empty to reference the
+						Channel.
+					</xs:documentation>
+				</xs:annotation>
+				<xs:complexType>
+					<xs:simpleContent>
+						<xs:extension base="xs:string">
+							<xs:attribute name="ChannelGroup" type="xs:string" use="optional">
+								<xs:annotation>
+									<xs:documentation xml:lang="en">Represents the
+										ChannelGroup for the specific Channel defined within IsUsed.
+									</xs:documentation>
+								</xs:annotation>
+							</xs:attribute>
+						</xs:extension>
+					</xs:simpleContent>
+				</xs:complexType>
+			</xs:element>
+			<xs:element name="HasClassification">
+				<xs:complexType>
+					<xs:complexContent>
+						<xs:extension base="osdd:tClassification"/>
+					</xs:complexContent>
+				</xs:complexType>
+			</xs:element>
+			<xs:element name="With">
+				<xs:complexType>
+					<xs:annotation>
+						<xs:documentation xml:lang="en">A type specifying a
+							logical construct to check a set of parameter values against
+							other parameters.
+						</xs:documentation>
+					</xs:annotation>
+					<xs:sequence maxOccurs="unbounded">
+						<xs:group ref="osdd:tWithConditionsRulesComparison"/>
+					</xs:sequence>
+					<xs:attribute name="ifParameter" type="osdd:tNonEmptyString" use="required"/>
+					<xs:attribute name="Relation" type="osdd:tAndOr" use="required"/>
+				</xs:complexType>
+			</xs:element>
+			<xs:element name="In">
+				<xs:annotation>
+					<xs:documentation xml:lang="en">The parameter value has
+						to be part of the defined group.
+					</xs:documentation>
+				</xs:annotation>
+				<xs:complexType>
+					<xs:choice>
+						<xs:element name="Parameter" type="osdd:tConditionsParameter" minOccurs="0"/>
+						<xs:element name="Group" type="osdd:tConditionsGroup"/>
+					</xs:choice>
+				</xs:complexType>
+			</xs:element>
+		</xs:choice>
+	</xs:group>
+	<xs:group name="tConditionsRulesLogical">
+		<xs:choice>
+			<xs:element name="And" type="osdd:tConditionLogical"/>
+			<xs:element name="Or" type="osdd:tConditionLogical"/>
+			<xs:element name="Not" type="osdd:tConditionLogical"/>
+		</xs:choice>
+	</xs:group>
+	<xs:group name="tConditionsValidationOptions">
+		<xs:choice>
+			<xs:group ref="osdd:tConditionsRulesComparison"/>
+			<xs:group ref="osdd:tConditionsRulesLogical"/>
+		</xs:choice>
+	</xs:group>
+	<xs:group name="tWithConditionsRulesComparison">
+		<xs:choice>
+			<xs:element name="GreaterThan" type="osdd:tWithConditionsValidationComparison"/>
+			<xs:element name="GreaterEqual" type="osdd:tWithConditionsValidationComparison"/>
+			<xs:element name="LessThan" type="osdd:tWithConditionsValidationComparison"/>
+			<xs:element name="LessEqual" type="osdd:tWithConditionsValidationComparison"/>
+			<xs:element name="Equal" type="osdd:tWithConditionsValidationComparison"/>
+			<xs:element name="IsUsed" nillable="true">
+				<xs:annotation>
+					<xs:documentation xml:lang="en">The IsUsed represents
+						whether a Channel in a certain ChannelGroup is used within a
+						design tool. If the enclosing Setting is part of a ChannelSettings
+						element the IsUsed element can be used empty to reference the
+						Channel.
+					</xs:documentation>
+				</xs:annotation>
+				<xs:complexType>
+					<xs:simpleContent>
+						<xs:extension base="xs:string">
+							<xs:attribute name="ChannelGroup" type="xs:string" use="optional">
+								<xs:annotation>
+									<xs:documentation xml:lang="en">Represents the
+										ChannelGroup for the specific Channel defined within IsUsed.
+									</xs:documentation>
+								</xs:annotation>
+							</xs:attribute>
+						</xs:extension>
+					</xs:simpleContent>
+				</xs:complexType>
+			</xs:element>
+			<xs:element name="In">
+				<xs:annotation>
+					<xs:documentation xml:lang="en">The parameter value has
+						to be part of the defined group.
+					</xs:documentation>
+				</xs:annotation>
+				<xs:complexType>
+					<xs:choice>
+						<xs:element name="Parameter" type="osdd:tConditionsParameter" minOccurs="0"/>
+						<xs:element name="Group" type="osdd:tConditionsGroup"/>
+					</xs:choice>
+					<xs:attribute name="ifVal" type="osdd:tNonEmptyString" use="required"/>
+				</xs:complexType>
+			</xs:element>
+		</xs:choice>
+	</xs:group>
+	<xs:attributeGroup name="attrCopyToAllSN">
+		<xs:annotation>
+			<xs:documentation xml:lang="en">Specifies a channel or
+				setting is copied to all SN if the module provides SCM
+				functionality.
+			</xs:documentation>
+		</xs:annotation>
+		<xs:attribute name="CopyToAllSN" type="osdd:hTrueFalse" use="optional" default="false"/>
+	</xs:attributeGroup>
+	<xs:attributeGroup name="attrDesignerEditRole">
+		<xs:annotation>
+			<xs:documentation xml:lang="en">Defines the minimum role
+				needed for changing this setting or settings for a whole settings
+				group. Default value is always Developer.
+			</xs:documentation>
+		</xs:annotation>
+		<xs:attribute name="MinRole" default="Development">
+			<xs:annotation>
+				<xs:documentation xml:lang="en">Defines the minimum role
+					needed for changing this setting or settings for a whole settings
+					group. Default value is always Developer.
+				</xs:documentation>
+			</xs:annotation>
+			<xs:simpleType>
+				<xs:restriction base="xs:string">
+					<xs:enumeration value="Development">
+						<xs:annotation>
+							<xs:documentation xml:lang="en">A developer is the
+								default role a design-tool, and usually able to change every
+								setting of the module.
+							</xs:documentation>
+						</xs:annotation>
+					</xs:enumeration>
+					<xs:enumeration value="Commissioning">
+						<xs:annotation>
+							<xs:documentation xml:lang="en">This role defines a
+								person which is able to view the configuration of the openSAFETY
+								network and it's parameters, and depending of the value of this
+								attribute can change certain parameters.
+							</xs:documentation>
+						</xs:annotation>
+					</xs:enumeration>
+					<xs:enumeration value="Maintenance">
+						<xs:annotation>
+							<xs:documentation xml:lang="en">The role maintenance defines a user who is only able to watch variable status and values, and review the settings. Settings and settings groups which are explicitly tagged with the role Maintenance the user is able to change.
+							</xs:documentation>
+						</xs:annotation>
+					</xs:enumeration>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+	</xs:attributeGroup>
+	<xs:attributeGroup name="attrDesignerVisibility">
+		<xs:annotation>
+			<xs:documentation xml:lang="en">Attributes defining the
+				visibility of this element to a design tool.
+			</xs:documentation>
+		</xs:annotation>
+		<xs:attribute name="Visibility" default="Overall">
+			<xs:simpleType>
+				<xs:restriction base="xs:token">
+					<xs:enumeration value="None">
+						<xs:annotation>
+							<xs:documentation xml:lang="en">The entry is not visible and
+								will not be transported to the module.
+							</xs:documentation>
+						</xs:annotation>
+					</xs:enumeration>
+					<xs:enumeration value="SafetyOnly">
+						<xs:annotation>
+							<xs:documentation xml:lang="en">The entry is only
+								visible to the safety module and the toolchain.
+							</xs:documentation>
+						</xs:annotation>
+					</xs:enumeration>
+					<xs:enumeration value="ReadOnly">
+						<xs:annotation>
+							<xs:documentation xml:lang="en">The entry is
+								read-only in the design tool, and will be communicated as-is to
+								the safety module.
+							</xs:documentation>
+						</xs:annotation>
+					</xs:enumeration>
+					<xs:enumeration value="Overall">
+						<xs:annotation>
+							<xs:documentation xml:lang="en">The entry is
+								read/writeable in the design tool and will be communicated to
+								the safety module.
+							</xs:documentation>
+						</xs:annotation>
+					</xs:enumeration>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+	</xs:attributeGroup>
+	<xs:attributeGroup name="attrParameterConstant">
+		<xs:annotation>
+			<xs:documentation xml:lang="en"/>
+		</xs:annotation>
+		<xs:attribute name="Type" type="osdd:tOSDDValueTypes" use="required"/>
+		<xs:attribute name="Value" type="osdd:tNonEmptyString" use="required"/>
+	</xs:attributeGroup>
+	<xs:attributeGroup name="attrIDName">
+		<xs:attribute name="id" type="osdd:tNonEmptyString" use="required">
+			<xs:annotation>
+				<xs:documentation xml:lang="en">A unique identifier,
+					which uses no spaces.
+				</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="Name" type="osdd:tNonEmptyString" use="optional">
+			<xs:annotation>
+				<xs:documentation xml:lang="en">A human-readable name
+					for this element, using the default document language.
+				</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+	</xs:attributeGroup>
+	<xs:attributeGroup name="attrLanguage">
+		<xs:annotation>
+			<xs:documentation xml:lang="en">A language definition
+				must be defined using a CRC32 checksum and a pre-defined language
+				code, derived from one of the supported language codes.
+			</xs:documentation>
+		</xs:annotation>
+		<xs:attribute name="CRC32" type="osdd:hCRC32" use="required">
+			<xs:annotation>
+				<xs:documentation xml:lang="en">Represents the CRC32
+					checksum for this datatype.
+				</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="Lang" type="osdd:tLanguageCode" use="required">
+			<xs:annotation>
+				<xs:documentation xml:lang="en">The language ISO code for this
+					translation.
+				</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+	</xs:attributeGroup>
+	<xs:attributeGroup name="attrIsSafeAttribute">
+		<xs:attribute name="isSafe" type="osdd:hTrueFalse" use="required">
+			<xs:annotation>
+				<xs:documentation xml:lang="en">Indicates whether a
+					channel is not only transported in an SPDO but is also safely
+					processed.
+				</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+	</xs:attributeGroup>
+	<xs:simpleType name="tLanguageCode">
+		<xs:restriction base="xs:language">
+			<xs:pattern value="[a-z]{2}"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:complexType name="tFunctionModels">
+		<xs:sequence>
+			<xs:element name="Function" type="osdd:tFunction" maxOccurs="unbounded"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="tChannelGroup">
+		<xs:sequence>
+			<xs:element name="Description" type="osdd:tDescription" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation xml:lang="en">This should
+										describe the channelgroup. The description can be displayed in
+										a design-tool.
+									</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="VendorInfo" type="osdd:tNonEmptyString" minOccurs="0"
+				maxOccurs="unbounded"/>
+			<xs:element name="Channel" type="osdd:tChannel" maxOccurs="unbounded">
+				<xs:annotation>
+					<xs:documentation xml:lang="en">A channel which
+											transports non-safe or save data.
+										</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+		<xs:attributeGroup ref="osdd:attrIDName"/>
+		<xs:attributeGroup ref="osdd:attrCopyToAllSN"/>
+	</xs:complexType>
+	<xs:complexType name="tProfiles">
+		<xs:sequence minOccurs="1" maxOccurs="unbounded">
+			<xs:element name="Profile">
+				<xs:complexType>
+					<xs:simpleContent>
+						<xs:extension base="osdd:tNonEmptyString"/>
+					</xs:simpleContent>
+				</xs:complexType>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="tProfileInfo" mixed="true">
+		<xs:sequence>
+			<xs:element name="ProfileRepetition" minOccurs="0" maxOccurs="1">
+				<xs:complexType>
+					<xs:attributeGroup ref="osdd:attrDataRepetition"/>
+				</xs:complexType>
+			</xs:element>
+		</xs:sequence>
+		<xs:attribute name="id" type="osdd:tNonEmptyString" use="required"/>
+		<xs:attribute name="profile" type="osdd:tNonEmptyString">
+			<xs:annotation>
+				<xs:documentation>
+					This has to reflect a profile definition in the header of the OSDD.
+				</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+	</xs:complexType>
+	<xs:element name="RelationWith">
+		<xs:annotation>
+			<xs:documentation xml:lang="en">A channel can have relations with other channel. An 'And' relation forces the channels to be used together. An 'Xor' forces the user only to use one of the both channels.</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:choice>
+				<xs:element name="And" type="osdd:tChannelRelation"/>
+				<xs:element name="Xor" type="osdd:tChannelRelationSingle"/>
+			</xs:choice>
+		</xs:complexType>
+	</xs:element>
+	<xs:complexType name="tChannelRelation">
+		<xs:sequence maxOccurs="unbounded">
+			<xs:element name="ChannelRef">
+				<xs:complexType>
+					<xs:attribute name="id" type="osdd:tNonEmptyString"/>
+				</xs:complexType>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="tChannelRelationSingle">
+		<xs:sequence maxOccurs="1">
+			<xs:element name="ChannelRef">
+				<xs:complexType>
+					<xs:attribute name="id" type="osdd:tNonEmptyString"/>
+				</xs:complexType>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:element name="ActiveInFunction">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="FunctionReference" maxOccurs="unbounded">
+					<xs:complexType>
+						<xs:attribute name="id" type="osdd:tNonEmptyString"/>
+					</xs:complexType>
+				</xs:element>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+	<xs:attributeGroup name="attrDataRepetition">
+		<xs:attribute name="NrOfDigits" type="xs:positiveInteger" use="required">
+			<xs:annotation>
+				<xs:documentation xml:lang="en">Nr of digits representing the final value.
+				</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="RangeMax" type="xs:positiveInteger" use="required">
+			<xs:annotation>
+				<xs:documentation xml:lang="en">Maximum value for range.
+				</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="StartsWith" type="xs:nonNegativeInteger" use="optional" default="1">
+			<xs:annotation>
+				<xs:documentation xml:lang="en">Starting number for the repetition.
+				</xs:documentation>
+			</xs:annotation>
+		</xs:attribute>
+	</xs:attributeGroup>
+</xs:schema>

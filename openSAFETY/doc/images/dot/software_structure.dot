@@ -1,0 +1,43 @@
+digraph software_structure  {
+    graph [ compound=true, rankdir="TB", nodesep=0.5, ranksep=0.8, splines=ortho ];
+    node [ shape=box, fontsize="10" ];
+
+    SSC;
+	SNMTS;
+	SCM;
+	SHNF;
+    
+    subgraph cluster0 {
+        SPDO;
+        SSDOS;
+        SSDOC;
+        SNMTM;
+    }
+
+    subgraph cluster1 {
+        SOD;
+        SFS;
+        SDN;
+    }
+
+    SSC -> SNMTS[weight=3];
+	SSC -> SCM[weight=2];
+	
+    SCM -> { SSDOC; SNMTM };
+    SNMTS -> SSDOC [lhead=cluster0, headport=n];
+	
+    SSC -> SFS[lhead=cluster1, headport=n, weight=1]
+    SSC -> SSDOS[lhead=cluster0, headport=n, weight=1]
+	SNMTM -> SFS[lhead=cluster1, ltail=cluster0]
+	
+    { rank=same; SHNF; SERR; SCFM; EPLS }
+    SFS -> SHNF
+
+    A [ style="invis" ]
+    A -> SERR;
+    B [ style="invis" ]
+    B -> SCFM;
+    C [ style="invis" ]
+    C -> EPLS;
+    
+}

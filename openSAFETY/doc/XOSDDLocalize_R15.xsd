@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:osddLocalize="http://www.ethernet-powerlink.org/osdd/Localize" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:osdd="http://www.ethernet-powerlink.org/osdd" targetNamespace="http://www.ethernet-powerlink.org/osdd/Localize" elementFormDefault="qualified">
+	<xs:import namespace="http://www.ethernet-powerlink.org/osdd" schemaLocation="XOSDD_R15.xsd"/>
+	<xs:element name="Localization">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element ref="osddLocalize:ModuleLocalization" minOccurs="1" maxOccurs="unbounded"/>
+			</xs:sequence>
+		</xs:complexType>
+		<xs:unique name="uniqueID">
+			<xs:selector xpath=".//osddLocalize:ModuleLocalization"/>
+			<xs:field xpath="@id"/>
+		</xs:unique>
+	</xs:element>
+	<xs:element name="ModuleLocalization">
+		<xs:annotation>
+			<xs:documentation xml:lang="en">Describes the localization for a specific module.</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+				<xs:choice maxOccurs="unbounded">
+					<xs:element ref="osddLocalize:TemplateEntry"/>
+					<xs:element ref="osddLocalize:IDEntry"/>
+					<xs:element ref="osddLocalize:ActionEntry"/>
+				</xs:choice>
+			<xs:attribute name="id" type="osdd:tNonEmptyString" use="required">
+				<xs:annotation>
+					<xs:documentation xml:lang="en">The id is used to identify the module for the localization.</xs:documentation>
+				</xs:annotation>
+			</xs:attribute>
+			<xs:attribute name="Lang" type="osdd:tLanguageCode" use="required">
+				<xs:annotation>
+					<xs:documentation xml:lang="en">One of the possible language codes describing the language ISO code for this translation.</xs:documentation>
+				</xs:annotation>
+			</xs:attribute>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="IDEntry" type="osddLocalize:IDEntryType">
+		<xs:annotation>
+			<xs:documentation xml:lang="en">Defines a localized entry for an object of the type Key and is identfied by an id</xs:documentation>
+		</xs:annotation>
+	</xs:element>
+	<xs:element name="TemplateEntry" type="osddLocalize:TemplateEntryType">
+		<xs:annotation>
+			<xs:documentation xml:lang="en">Defines a localized entry for a template object identified by Name and Value.</xs:documentation>
+		</xs:annotation>
+	</xs:element>
+	<xs:element name="ActionEntry" type="osddLocalize:ActionEntryType">
+		<xs:annotation>
+			<xs:documentation xml:lang="en">Defines a localized entry for a validation action object identified by GroupID, id and Name.</xs:documentation>
+		</xs:annotation>
+	</xs:element>
+	<xs:attributeGroup name="attrGroupTypeAction">
+		<xs:attribute name="TextType" type="osddLocalize:tTextTypeAction" use="required"/>
+	</xs:attributeGroup>
+	<xs:attributeGroup name="attrGroupTypeTemplate">
+		<xs:attribute name="TextType" type="osddLocalize:tTextTypeTemplate" use="optional" default="Name"/>
+	</xs:attributeGroup>
+	<xs:attributeGroup name="attrGroupTypeId">
+		<xs:attribute name="TextType" type="osddLocalize:tTextTypeId" use="optional" default="Name"/>
+	</xs:attributeGroup>
+	<xs:simpleType name="tIdKeyEntry">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="Module"/>
+			<xs:enumeration value="ModuleFunction"/>
+			<xs:enumeration value="SettingsGroup"/>
+			<xs:enumeration value="Setting"/>
+			<xs:enumeration value="Channel"/>
+			<xs:enumeration value="ChannelGroup"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="tActionKeyEntry">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="Setting"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="tTextTypeAction">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="ErrorMessage"/>
+			<xs:enumeration value="WarningMessage"/>
+			<xs:enumeration value="InfoMessage"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="tTextTypeId">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="Name"/>
+			<xs:enumeration value="Description"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="tTextTypeTemplate">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="Display"/>
+			<xs:enumeration value="Name"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:complexType name="TemplateEntryType">
+		<xs:sequence>
+			<xs:element name="TextEntry" type="osddLocalize:tTextEntryTemplate" maxOccurs="unbounded"/>
+		</xs:sequence>
+		<xs:attribute name="TemplateId" type="osdd:tNonEmptyString" use="required"/>
+		<xs:attribute name="TemplateValue" type="osdd:tNonEmptyString" use="optional"/>
+	</xs:complexType>
+	<xs:complexType name="IDEntryType">
+		<xs:sequence>
+			<xs:element name="TextEntry" type="osddLocalize:tTextEntryId" maxOccurs="unbounded"/>
+		</xs:sequence>
+		<xs:attribute name="Key" type="osddLocalize:tIdKeyEntry" use="required"/>
+		<xs:attribute name="GroupId" type="osdd:tNonEmptyString" use="optional"/>
+		<xs:attribute name="id" type="osdd:tNonEmptyString" use="required"/>
+	</xs:complexType>
+	<xs:complexType name="ActionEntryType">
+		<xs:sequence>
+			<xs:element name="TextEntry" type="osddLocalize:tTextEntryAction" maxOccurs="unbounded"/>
+		</xs:sequence>
+		<xs:attribute name="Key" type="osddLocalize:tActionKeyEntry" use="required"/>
+		<xs:attribute name="GroupId" type="osdd:tNonEmptyString" use="optional"/>
+		<xs:attribute name="id" type="osdd:tNonEmptyString" use="required"/>
+		<xs:attribute name="ValidationName" type="osdd:tNonEmptyString" use="required"/>
+	</xs:complexType>
+	<xs:complexType name="tTextEntryTemplate">
+		<xs:simpleContent>
+			<xs:extension base="osdd:tNonEmptyString">
+				<xs:attributeGroup ref="osddLocalize:attrGroupTypeTemplate"/>
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
+	<xs:complexType name="tTextEntryAction">
+		<xs:simpleContent>
+			<xs:extension base="osdd:tNonEmptyString">
+				<xs:attributeGroup ref="osddLocalize:attrGroupTypeAction"/>
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
+	<xs:complexType name="tTextEntryId">
+		<xs:simpleContent>
+			<xs:extension base="osdd:tNonEmptyString">
+				<xs:attributeGroup ref="osddLocalize:attrGroupTypeId"/>
+			</xs:extension>
+		</xs:simpleContent>
+	</xs:complexType>
+</xs:schema>

@@ -1,0 +1,62 @@
+digraph safety_node  {
+    compound = false;
+
+    phys [ label = "Physical Safety IO/s", shape = box ];
+    comm [ label = "Non-safe Communication-Software", shape = box ];
+
+    subgraph cluster4 {
+        label = "Safe communication structure";
+        rank = "same";
+        subgraph cluster0 {
+            label = "Safety Controller 1";
+            color=black;
+            app1 [ label = "Application", shape = box ];
+            subgraph cluster2 {
+                label = "";
+                style = filled;
+                color = yellow;
+                os1 [ label = "openSAFETY\nStack", shape = box ];
+                sod1 [ label = "SOD", shape = box ];
+                os1 -> sod1;
+            }
+            shnf1a [ label = "SHNF\n(SC-SC)", shape = box ];
+            shnf1b [ label = "SHNF\n(SC-CC)", shape = box ];
+
+        }
+        subgraph cluster1 {
+            label = "Safety Controller 2";
+            color=black;
+            app2 [ label = "Application", shape = box ];
+            shnf2a [ label = "SHNF\n(SC-SC)", shape = box ];
+            shnf2b [ label = "SHNF\n(SC-CC)", shape = box ];
+            subgraph cluster3 {
+                label = "";
+                style = filled;
+                color = yellow;
+                os2 [ label = "openSAFETY\nStack", shape = box ];
+                sod2 [ label = "SOD", shape = box ];
+                os2 -> sod2;
+            }
+        }
+        labeljust = l;
+    }
+
+    shnf1a -> shnf2a[dir=both,constraint=false,label="(3)"]
+    phys -> app1[lhead=cluster0];
+    app1 -> shnf1a -> shnf1b;
+
+    shnf1b -> comm[ltail=cluster0, label = "(2)", headport = "n" ];
+    phys -> app2[lhead=cluster1];
+    app2 -> shnf2a -> shnf2b;
+    shnf2b -> comm[ltail=cluster1, label = "(2)", headport = "n" ];
+
+	comm -> shnf1b[lhead=cluster1, label="(1)", tailport="n"];
+	comm -> shnf2b[lhead=cluster1, label="(1)", tailport="n"];
+	
+    app1 -> os1 [lhead=cluster2];
+    os1 -> shnf1b[ltail=cluster2];
+
+    app2 -> os2 [lhead=cluster3];
+    os2 -> shnf2b[ltail=cluster3];
+
+}

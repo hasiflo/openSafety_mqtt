@@ -1,0 +1,59 @@
+
+Include(CMakeDependentOption)
+
+# The version number.
+SET (openSAFETY_VERSION 1)
+SET (openSAFETY_CERTIFICATION 5)
+SET (openSAFETY_TOOLSET 2)
+SET (openSAFETY_VERSION_RELEASE "${openSAFETY_VERSION}.${openSAFETY_CERTIFICATION}.${openSAFETY_TOOLSET}")
+SET (openSAFETY_VERSION_NAME "'CMake Release'")
+
+
+# We have to enable an option, which allows only for building the toolchain.
+# The reason behind this is, to allow building a host-based toolchain, when
+# using a target compiler, which is not able to product binaries, which can
+# ran natively on the hosts
+OPTION ( BUILD_OPENSAFETY_TOOLS "Builds the opensafety toolchain, which includes tools for checking crc checksums " ON )
+CMAKE_DEPENDENT_OPTION ( BUILD_OPENSAFETY_PYTHON_TOOLS "Builds the SOD builder as a python tool " OFF "BUILD_OPENSAFETY_TOOLS"  ON )
+CMAKE_DEPENDENT_OPTION ( CRC_ROTATED_ENABLE "Change the standard polynoms of the CRC16 looup tables to the rotated ones" OFF "BUILD_OPENSAFETY_TOOLS"  ON )
+
+OPTION ( BUILD_OPENSAFETY_LIBS "Builds the opensafety libraries, which includes libraries for checking crc checksums " ON )
+
+# Allow the developer to select if Dynamic or Static libraries are built
+OPTION ( BUILD_SHARED_LIBS "Build Shared Libraries" ON)
+MARK_AS_ADVANCED ( BUILD_SHARED_LIBS )
+
+OPTION ( UNITTEST_ENABLE "Enables the unittest integration for the openSAFETY distribution" ON )
+
+CMAKE_DEPENDENT_OPTION ( UNITTEST_XML_REPORTS "Generates XML reports instead of stdout output" ON "UNITTEST_ENABLE" OFF )
+OPTION ( UNITTEST_TOOLS "Enables the unittest integration for the tools directory" OFF )
+MARK_AS_ADVANCED ( UNITTEST_TOOLS )
+
+OPTION ( CHECKSUM_SRC_ENABLE_CHECKS "Builds the opensafety sourcecode checks,  which include unit tests as well as PC Lint checks. This option only enables the checksystem, PERFORM_CHECKS actually performs them" ON )
+
+CMAKE_DEPENDENT_OPTION ( CHECKSUM_SRC_PERFORM_CHECKS "Performs the opensafety sourcecode checks,  which include unit tests as well as PC Lint checks" ON
+    "CHECKSUM_SRC_ENABLE_CHECKS"  ON )
+MARK_AS_ADVANCED ( CHECKSUM_SRC_PERFORM_CHECKS )
+
+OPTION ( BUILD_OPENSAFETY_DOCUMENTATION "Builds the opensafety sourcecode documentation" ON )
+
+####################################
+
+CMAKE_DEPENDENT_OPTION ( CHECKSUM_SRC_WARN_ONLY_ON_FAIL "Only displays a warning, if the CRC check fails" ON
+    "CHECKSUM_SRC_PERFORM_CHECKS" OFF
+)
+MARK_AS_ADVANCED ( CHECKSUM_SRC_WARN_ONLY_ON_FAIL )
+
+CMAKE_DEPENDENT_OPTION ( CHECKSUM_SRC_SOURCECODE "Perform checks on the openSAFETY stack sourcecode" ON
+    "CHECKSUM_SRC_PERFORM_CHECKS" ON
+)
+MARK_AS_ADVANCED ( CHECKSUM_SRC_SOURCECODE )
+
+####################################
+
+SET ( PYSODBUILDER_INPUT_DIR "" CACHE PATH "directory of input source files" )
+SET ( PYSODBUILDER_MODULE_ID "" CACHE STRING "module id to generate files for" )
+SET ( PYSODBUILDER_OUTPUT_DIR "" CACHE PATH "direcotry of the outputfiles" )
+SET ( PYSODBUILDER_OSDD_FILE "" CACHE FILEPATH "osdd file to use for pysodbuilder" )
+SET ( PYSODBUILDER_SETTINGS_FILE "" CACHE FILEPATH "settings file to use for pysodbuilder" )
+SET ( PYSODBUILDER_OSDD_SCHEMA_FILE "" CACHE FILEPATH "OSDD schema file" )
